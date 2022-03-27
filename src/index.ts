@@ -1,5 +1,6 @@
 import {ZenderAPI} from "./lib/api";
-import {IZenderAPI} from "./lib/types";
+import {IZenderAPI} from "./lib/types/api";
+export {JsMathProcessor} from './lib/processor'
 
 let API: IZenderAPI;
 

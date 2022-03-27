@@ -1,32 +1,17 @@
-import * as I from './types'
+import * as Text from './types/texts'
+import { Optionable } from './types/api';
 
-export class MathText implements I.IMathText {
-    private static _defaultOptions: I.TextOptions = {
+export class MathText extends Optionable<Text.TextOptions> implements Text.IMathText {
+    private static readonly _defaultOptions: Text.TextOptions = {
 
     };
-
-    private _options: I.TextOptions;
     private _element: HTMLElement;
-    constructor(el: HTMLElement, options: I.TextOptions) {
-        this._options = MathText.defaultOptions(options);
+    
+    constructor(el: HTMLElement, options: Text.TextOptions) {
+        super(options, MathText._defaultOptions);
         this._element = el;
-    }
-    get options(): I.TextOptions {
-        return this._options;
-    }
-    set options(options) {
-        this._options = MathText.defaultOptions(options);
     }
     get element(): HTMLElement {
         return this._element;
-    }
-    private static defaultOptions(options: I.TextOptions) {
-        return {...this._defaultOptions, ...options};
-    }
-}
-
-export class MathField extends MathText implements I.IMathField {
-    constructor(el: HTMLElement, options: I.FieldOptions) {
-        super(el, options);
     }
 }
