@@ -9,20 +9,20 @@ export interface IZenderAPI {
 export abstract class Optionable<T extends object> {
     private _default: T;
     private _options: T;
-    constructor(options: T, defaults: T) {
+    constructor(defaults: T, options?: T) {
         this._default = defaults;
-        this._options = Optionable.default<T>(options, defaults);
+        this._options = Optionable.default<T>(defaults, options ?? defaults);
     }
-    getOptions(): T {
+    get options(): T {
         return this._options;
     }
-    setOptions(options: T): void {
-        this._options = Optionable.default<T>(options, this._default);
+    set options(options: T) {
+        this._options = Optionable.default<T>(this._default, options);
     }
     updateOptions(options: T) {
-        this._options = Optionable.default<T>(options, this._options);
+        this._options = Optionable.default<T>(this._options, options);
     }
-    private static default<O>(options: O, defaults: O): O {
+    private static default<O>(defaults: O, options: O): O {
         return {...defaults, ...options};
     }
 }

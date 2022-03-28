@@ -6,9 +6,9 @@ export class MathText extends Optionable<Text.TextOptions> implements Text.IMath
 
     };
     private _element: HTMLElement;
-    
-    constructor(el: HTMLElement, options: Text.TextOptions) {
-        super(options, MathText._defaultOptions);
+
+    constructor(el: HTMLElement, options?: Text.TextOptions) {
+        super(MathText._defaultOptions, options);
         this._element = el;
     }
     get element(): HTMLElement {
