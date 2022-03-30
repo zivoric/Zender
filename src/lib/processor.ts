@@ -29,21 +29,20 @@ export class JsMathProcessor extends Optionable<ProcessorOptions>  {
         return final;
     }
     serializeUnit(obj: MathUnit): string {
-        switch(typeof obj) {
-            case 'object':
-                let final = obj.operator;
-                if (obj.arguments && obj.arguments.length > 0) {
-                    final += obj.arguments.map(arg=>{
-                        let s = this.serialize(arg);
-                        if (s.length == 1 && (final.charAt(0) != '\\' || /\d/.test(s))) {
-                            return s;
-                        } else {
-                            return '{' + s + '}';
-                        }
-                    }).join('');
-                }
-                return final;
-            default:
+        if (typeof obj == 'object') {
+            let final = obj.operator;
+            if (obj.arguments && obj.arguments.length > 0) {
+                final += obj.arguments.map(arg=>{
+                    let s = this.serialize(arg);
+                    if (s.length == 1 && (final.charAt(0) != '\\' || /\d/.test(s))) {
+                        return s;
+                    } else {
+                        return '{' + s + '}';
+                    }
+                }).join('');
+            }
+            return final;
+        } else {
                 return obj.toString();
         }
     }
