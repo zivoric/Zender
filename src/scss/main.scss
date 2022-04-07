@@ -1,0 +1,69 @@
+@import "fonts";
+
+[z-text] {
+    font: 1em "XITS", "XITS Math", serif;
+    text-align: center;
+    user-select: none;
+    display: inline-block;
+
+    * {
+        box-sizing: border-box;
+        line-height: 120%;
+    }
+
+    z-num {
+        font-style: normal;
+    }
+
+    z-var {
+        font-style: italic;
+        font-size: 1em;
+    }
+
+    z-sscript, z-frac {
+        display: inline-block;
+        
+        z-sup, z-sub, z-numer, z-denom {
+            display: block;
+            
+        }
+
+        z-sub, z-denom {
+            float: left;
+        }
+
+        &::after {
+            content: "";
+            display: inline-block;
+        }
+    }
+
+    z-sscript {
+        vertical-align: -0.6em;
+        padding-left: 0.1em;
+        padding-right: 0.1em;
+        z-sup, z-sub {
+            font-size: 0.75em;
+        }
+    }
+
+    z-frac {
+        vertical-align: -0.55em;
+
+        z-numer, z-denom {
+            font-size: 0.8em;
+            padding: 0 0.4em;
+            width: 100%;
+        }
+        z-numer {
+            border-bottom: 1px solid black;
+        }
+        z-denom {
+            padding-top: 0.4em;
+        }
+    }
+
+    z-op {
+        padding: 0 0.2em;
+    }
+}

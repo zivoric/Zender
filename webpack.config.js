@@ -12,22 +12,23 @@ module.exports = {
         }
     },
     resolve: {
-        extensions: ['.ts','.js'],
+        extensions: ['.ts','.js']
     },
     module: {
         rules: [{
             test: /\.ts$/,
             exclude: /node_modules/,
-            use: "babel-loader"
+            use: 'babel-loader'
         },
         {
             test: /\.js$/,
             exclude: /node_modules/,
-            use: "source-map-loader"
+            use: 'source-map-loader'
         },
         {
-            test: /\.css$/,
-            use: ["style-loader", "css-loader"]
+            test: /\.scss$/,
+            include: path.resolve(__dirname, 'src/scss'),
+            use: ['style-loader','css-loader','sass-loader']
         }
-    ]},
+    ]}
 };
