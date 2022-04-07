@@ -40,10 +40,15 @@
 
     z-sscript {
         vertical-align: -0.6em;
-        padding-left: 0.1em;
         padding-right: 0.1em;
+        margin-bottom: -0.4em;
+
         z-sup, z-sub {
             font-size: 0.75em;
+        }
+
+        & z-sscript {
+            margin-bottom: 0;
         }
     }
 
@@ -56,10 +61,11 @@
             width: 100%;
         }
         z-numer {
+            padding-bottom: 0.2em;
             border-bottom: 1px solid black;
         }
         z-denom {
-            padding-top: 0.4em;
+            padding-top: 0.2em;
         }
     }
 
