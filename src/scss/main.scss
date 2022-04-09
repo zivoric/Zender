@@ -86,14 +86,19 @@
 
     z-root {
         display: inline-flex;
-        padding: 0.5em 0.1em 0 0.1em;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        padding: 0 0.1em;
 
         > z-ord {
             float: left;
+            text-align: left;
+            align-self: flex-end;
             order: -1;
-            transform: translate(0.5em, -0.6em);
+            margin-bottom: -0.75em;
+            margin-right: -0.25em;
+            flex-basis: 100%;
             font-size: 0.75em;
-            margin-left: -0.5em;
             min-width: 0.5em;
         }
         > z-arg {
