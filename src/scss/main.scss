@@ -86,7 +86,7 @@
 
     z-root {
         display: inline-flex;
-        flex-wrap: wrap;
+        flex-wrap: wrap-reverse;
         justify-content: flex-end;
         padding: 0 0.1em;
 
@@ -94,7 +94,7 @@
             float: left;
             text-align: left;
             align-self: flex-end;
-            order: -1;
+            order: 1;
             margin-bottom: -0.75em;
             margin-right: -0.25em;
             flex-basis: 100%;
@@ -118,7 +118,7 @@
         }
         &::after {
             content: "\200B";
-            order: -2;
+            order: -1;
             align-self: center;
         }
     }
