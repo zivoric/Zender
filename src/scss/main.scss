@@ -2,12 +2,12 @@
 
 [z-text] {
     font: 1em "XITS", "XITS Math", serif;
-    text-align: center;
     user-select: none;
     display: inline-block;
 
     * {
         box-sizing: border-box;
+        text-align: center;
         line-height: 120%;
     }
 
@@ -70,14 +70,14 @@
         }
         z-numer {
             padding-bottom: 0.2em;
-            border-bottom: 1px solid black;
+            border-bottom: 0.05em solid black;
 
             > z-frac {
                 margin-bottom: -0.2em;
             }
         }
         z-denom {
-            padding-top: 0.2em;
+            padding-top: 0.25em;
             > z-sscript {
                 margin-bottom: -0.2em;
             }
@@ -133,8 +133,8 @@
         }
 
         &::before, &::after {
-            width: 0.4em;
-            background-size: 64% 100%;
+            width: 0.5em;
+            background-size: 43% 100%;
             background-repeat: no-repeat;
             content: "\200B";
             vertical-align: middle;
@@ -163,6 +163,25 @@
         }
         &[type="abs"]::before, &[type="abs"]::after {
             background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="20 60 275 880" preserveAspectRatio="none"> <path fill="currentColor" d="M193 939h-66v-879h66v879z"/> </svg>');
+        }
+    }
+
+    z-int {
+        display: inline-block;
+        padding: 0.4em 0.3em 0.4em 0;
+
+        &::before {
+            content: "\222B";
+            font-size: 1.35em;
+            display: inline-block;
+        }
+        > z-sscript > z-sup {
+            text-align: left;
+            transform: translate(0.4em, -0.4em);
+        }
+        > z-sscript > z-sub {
+            text-align: left;
+            transform: translate(-0.2em, 0.4em);
         }
     }
 }
