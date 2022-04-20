@@ -5,16 +5,24 @@
     </head>
   <body>
     <div id="app">
-      <span z-text="" z-editable="false" style="font-size: 20px;">
-        <z-var>F</z-var><z-sscript><z-sub>e</z-sub></z-sscript><z-op>=</z-op>
+      <span z-text z-editable="false" style="font-size: 20px;">
+        <z-var>F</z-var><z-sscript><z-sub><z-var>e</z-var></z-sub></z-sscript><z-op>=</z-op>
         <z-frac><z-numer><z-var>q</z-var><z-sscript><z-sub>1</z-sub></z-sscript><z-var>q</z-var><z-sscript><z-sub>2</z-sub></z-sscript></z-numer>
         <z-denom><z-num>4</z-num><z-var>&pi;</z-var><z-var>&epsilon;</z-var><z-sscript><z-sub>0</z-sub></z-sscript><z-var>r</z-var><z-sscript><z-sup>2</z-sup></z-sscript></z-denom>
         </z-frac>
       </span>
+      <br>
+      <span z-text z-editable="false" style="font-size: 20px;">
+        <z-root>
+          <z-ord>3</z-ord><z-arg><z-num>8</z-num><z-var>y</z-var></z-arg>
+        </z-root>
+      </span>
+      <br>
+      <span z-text z-editable="false" style="font-size: 20px;">
+        <z-func>cos</z-func><z-brackets ghost="right"><z-num>&pi;</z-num><z-op>&centerdot;</z-op><z-brackets type="square"><z-frac><z-numer><z-var>&phi;</z-var></z-numer><z-denom>4</z-denom></z-frac></z-brackets></z-brackets>
+        <br>
+        <z-int><z-sscript><z-sup>3</z-sup><z-sub>0</z-sub></z-sscript></z-int><z-var>x</z-var><z-sscript><z-sup>2</z-sup></z-sscript><z-var>d</z-var><z-var>x</z-var>
+      </span>
     </div>
-    <script type="text/javascript">
-      document.body.onload = function() {
-      }
-    </script>
   </body>
 </html>

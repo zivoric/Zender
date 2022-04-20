@@ -1,9 +1,10 @@
-export type MathUnit = string | number | JsMathObject;
+export type MathUnit = string | JsMathObject;
 export type MathGroup = MathUnit | MathUnit[];
 
 export interface JsMathObject {
     operator: string,
-    arguments?: MathGroup[]
+    optional?: MathGroup[]
+    required?: MathGroup[]
 }
 /*
 let o : JsMathObject = {

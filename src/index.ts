@@ -2,7 +2,7 @@ import './scss/main.scss';
 
 import {ZenderAPI} from "./lib/api";
 import {IZenderAPI} from "./lib/types/api";
-export {JsMathProcessor} from './lib/processor';
+export {LaTeXProcessor} from './lib/processor';
 
 let API: IZenderAPI;
 
