@@ -11,6 +11,22 @@
         line-height: 120%;
     }
 
+    z-cursor {
+        height: 1em;
+        width: 0;
+        border-right: solid 1px black;
+        margin-left: -1px;
+    }
+
+    z-cursor[blink] {
+        border-right-color: transparent;
+    }
+
+    z-selection {
+        display: inline-block;
+        background-color: #ACCEF7;
+    }
+
     z-num, z-op, z-func {
         font-style: normal;
     }
