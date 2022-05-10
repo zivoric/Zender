@@ -1,6 +1,6 @@
 @import "fonts";
 
-[z-text] {
+[z-field] {
     font: 1em "XITS", "XITS Math", serif;
     user-select: none;
     display: inline-block;
@@ -27,7 +27,7 @@
         background-color: #ACCEF7;
     }
 
-    z-num, z-op, z-func {
+    z-num, z-op, z-text {
         font-style: normal;
     }
     

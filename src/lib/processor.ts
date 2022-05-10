@@ -22,18 +22,32 @@ export class DOMProcessor {
                 currentFragment.append(this.toDOM(unit));
             } else {
                 if (typeof unit == "object") {
-                    let op = unit.operator;
-                    let node = document.createElement("z-"+op);
-                    node.append(...Object.entries(unit.arguments).sort((a,b) => {
-                        if (op in argOrders) {
-                            return argOrders[op].indexOf(a[0]) - argOrders[op].indexOf(b[0]);
-                        }
-                        return 0;
-                    }).map(entry=> {
-                        let el = document.createElement("z-"+entry[0]);
-                        el.append(this.toDOM(entry[1]));
-                        return el;
-                    }));
+                    let node;
+                    if ("operator" in unit) {
+                        let op = unit.operator;
+                        node = document.createElement("z-" + op);
+                        node.append(...Object.entries(unit.arguments).sort((a, b) => {
+                            if (op in argOrders) {
+                                return argOrders[op].indexOf(a[0]) - argOrders[op].indexOf(b[0]);
+                            }
+                            return 0;
+                        }).map(entry => {
+                            let el = document.createElement("z-" + entry[0]);
+                            el.append(this.toDOM(entry[1]));
+                            return el;
+                        }));
+                    } else if ("name" in unit) {
+                        node = document.createElement("z-func");
+                        node.setAttribute("name", unit.name);
+                        node.append(this.toDOM(unit.display));
+                    } else if ("type" in unit) {
+                        node = document.createElement("z-brackets");
+                        node.setAttribute("type", unit.type);
+                        node.append(this.toDOM(unit.contents));
+                    } else {
+                        node = document.createElement("z-text");
+                        node.innerText = unit.text;
+                    }
                     currentFragment.append(node);
                 } else if (allowSelection && unit === SelectionStart) {
                         currentFragment = document.createElement("z-selection");
@@ -96,6 +110,16 @@ export class DOMProcessor {
                     group.push(SelectionStart, ...this.#fromDOMCollection(element.children), SelectionEnd);
                     allowSelection = false;
                 }
+            } else if (tagName == "func") {
+                let name = element.getAttribute("name") ?? "";
+                if (name.length == 0) {
+                    name = element.textContent ?? "";
+                }
+                group.push({name: name, display: this.#fromDOMCollection(element.children)});
+            } else if (tagName == "text") {
+                group.push({text: element.textContent ?? ""});
+            } else if (tagName == "brackets") {
+                group.push({type: element.getAttribute("type") ?? "", contents: this.#fromDOMCollection(element.children)});
             } else if (tagName in argOrders) {
                 let argOrder = argOrders[tagName];
                 let args: ArgumentList = {};

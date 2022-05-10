@@ -9,9 +9,21 @@ export interface JsMathObject {
 
 export const SelectionStart: unique symbol = Symbol();
 export const SelectionEnd: unique symbol = Symbol();
-export type MathUnit = string | JsMathObj | typeof SelectionStart | typeof SelectionEnd;
+export type MathUnit = string | JsMathObj | FunctionObj | TextObj | BracketObj | typeof SelectionStart | typeof SelectionEnd;
 export type MathGroup = (MathGroup|MathUnit)[];
 export type ArgumentList = {[arg: string]: MathGroup};
+
+export interface BracketObj {
+    type: string
+    contents: MathGroup
+}
+export interface TextObj {
+    text: string
+}
+export interface FunctionObj {
+    name: string,
+    display: MathGroup
+}
 export interface JsMathObj {
     operator: string,
     arguments: ArgumentList
