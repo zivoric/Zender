@@ -2,7 +2,8 @@ import './scss/main.scss';
 
 import {ZenderAPI} from "./lib/api";
 import {IZenderAPI} from "./lib/types/api";
-export {DOMProcessor, LaTeXProcessor} from './lib/processor';
+export * as DOMProcessor from './lib/processor/dom';
+export * as LaTeXProcessor from './lib/processor/latex';
 
 let API: IZenderAPI;
 

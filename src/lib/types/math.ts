@@ -1,15 +1,16 @@
-export type MU = string | JsMathObject;
-export type MG = MU | MU[];
+export type LaTeXUnit = string | LaTeXObject;
+export type LaTeXGroup = LaTeXUnit | LaTeXUnit[];
 
-export interface JsMathObject {
+export interface LaTeXObject {
     operator: string,
-    optional?: MG[]
-    required?: MG[]
+    optional?: LaTeXGroup[]
+    required?: LaTeXGroup[]
 }
 
 export const SelectionStart: unique symbol = Symbol();
 export const SelectionEnd: unique symbol = Symbol();
-export type MathUnit = string | JsMathObj | FunctionObj | TextObj | BracketObj | typeof SelectionStart | typeof SelectionEnd;
+export const Cursor: unique symbol = Symbol();
+export type MathUnit = string | JsMathObj | FunctionObj | TextObj | BracketObj | SelectionObj | typeof Cursor;
 export type MathGroup = (MathGroup|MathUnit)[];
 export type ArgumentList = {[arg: string]: MathGroup};
 
@@ -18,7 +19,10 @@ export interface BracketObj {
     contents: MathGroup
 }
 export interface TextObj {
-    text: string
+    text: MathGroup
+}
+export interface SelectionObj {
+    selection: MathGroup
 }
 export interface FunctionObj {
     name: string,

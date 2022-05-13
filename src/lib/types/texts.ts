@@ -5,5 +5,7 @@ export interface IMathText {
 }
 
 export type TextOptions = {
-
+    allowVariables: boolean
+    allowFunctions: boolean
+    format: "dom"|"latex"
 }
