@@ -3,6 +3,11 @@ import {
     MathGroup,
     ArgumentList,
     MathUnit,
+    SelectionIndex,
+    JsMathObj,
+    SelectionObj,
+    FunctionObj,
+    BracketObj,
 } from "../types/math";
 
 
@@ -11,6 +16,10 @@ const convertChars: {[op: string]: string} = {"*":"⋅"};
 const argOrders: {[op: string]: string[]} = {"frac": ["numer", "denom"], "sscript": ["sup", "sub"], "root":["ord", "arg"]};
 
 // Methods
+
+export function cursorBackspace(parent1: MathUnit, parent2: MathUnit, index: string) {
+
+}
 
 export function emptyBackspace(parent1: MathUnit, parent2: MathUnit, index: string): [topParent: boolean, content?: MathGroup] {
     if (typeof parent2 == "object") {
@@ -23,6 +32,7 @@ export function emptyBackspace(parent1: MathUnit, parent2: MathUnit, index: stri
                     if (Object.keys(parent2.arguments).length == 0) {
                         return [true];
                     } else {
+                        parent2.arguments[Object.keys(parent2.arguments)[0]].push(Cursor);
                         return [true, [parent2]];
                     }
                 case "root":
@@ -47,7 +57,136 @@ export function emptyBackspace(parent1: MathUnit, parent2: MathUnit, index: stri
     return [false];
 }
 
-export function cursorKey(key: string, prevSelection: MathGroup, postSelection: MathGroup) {
+export function inputKey(key: string, contents: MathGroup): void {
+    let indices = selectionIndex(contents);
+    let selection: any = fromIndex(contents, indices);
+    let cursor = typeof selection == "symbol";
+    let parent1 = fromIndex(contents, indices, 1) as MathGroup;
+    let parent2: any = fromIndex(contents, indices, 2);
+    let parentIndex = indices[indices.length-2] as string;
+    let index = indices[indices.length-1] as number;
+    delete parent1[index];
+    let prev = parent1.splice(0, index);
+    let post = parent1.splice(0);
+    let autoPrev: MathGroup = cursor ? prev : selection.selection;
+    switch (key.toLowerCase()) {
+        case "/":
+            parent1.splice(index, 0, [{operator:"frac", arguments:{"numer":[prev],"denom":[Cursor]}}, ...post]);
+            break;
+        case "^":
+            if (parentIndex == "sub") {
+                if (parent2.arguments["sup"]) {
+                    parent2.arguments["sup"].push(Cursor);
+                } else {
+                    parent2.arguments["sup"] = [Cursor];
+                }
+                parent1.push(...autoPrev, post);
+            } else {
+                
+            }
+        case "_":
+        case ")":
+        case "]":
+        case "}":
+        case "(":
+        case "[":
+        case "{":
+        case "|":
+        default:
+    }
+}
+
+function toGroup(unit: MathUnit): MathGroup {
+    let val: MathGroup = [];
+    if (typeof unit == "object") {
+        if ("contents" in unit) {
+            val = unit.contents;
+        } else if ("display" in unit) {
+            val = unit.display;
+        } else if ("selection" in unit) {
+            val = unit.selection;
+        }
+    }
+    return val;
+}
+
+export function fromIndex(group: MathGroup, index: SelectionIndex, parentLevel?: number): MathGroup|MathUnit|undefined {
+    let layer: MathGroup|MathUnit|undefined = group;
+    if (parentLevel) {
+        index = index.slice(0,index.length - parentLevel);
+    }
+    for (let i of index) {
+        if (!layer) {
+            break;
+        }
+        if (typeof i == "number") {
+            if (Array.isArray(layer)) {
+                layer = layer[i];
+            } else {
+                layer = toGroup(layer)[i];
+            }
+        } else if (typeof layer == "object" && "arguments" in layer) {
+            layer = layer.arguments[i];
+        } else {
+            layer = undefined;
+            break;
+        }
+    }
+    return layer;
+}
+
+export function selectionIndex(contents: MathGroup): SelectionIndex {
+    let indices: SelectionIndex = [];
+    for (let s in contents) {
+        let i = parseInt(s);
+        let unit = contents[i];
+        let subIndices: SelectionIndex;
+        if (Array.isArray(unit)) {
+            subIndices = selectionIndex(unit);
+        } else if (typeof unit == "object") {
+            if ("selection" in unit) {
+                indices.push(i);
+                break;
+            } else {
+                let val;
+                if ("contents" in unit) {
+                    val = unit.contents;
+                    subIndices = selectionIndex(val);
+                } else if ("display" in unit) {
+                    val = unit.display;
+                    subIndices = selectionIndex(val);
+                } else {
+                    val = unit.arguments;
+                    subIndices = selectionIndexArgs(val);
+                }
+            }
+        } else if (typeof unit == "symbol") {
+            indices.push(i);
+            break;
+        } else {
+            subIndices = [];
+        }
+        if (subIndices.length > 0) {
+            indices.push(i, ...subIndices);
+            break;
+        }
+    }
+    return indices;
+}
+
+function selectionIndexArgs(args: ArgumentList): SelectionIndex {
+    let indices: SelectionIndex = [];
+    for (let arg of Object.keys(args)) {
+        let subIndices = selectionIndex(args[arg]);
+        if (subIndices.length > 0) {
+            indices.push(arg, ...subIndices);
+            break;
+        }
+    }
+    return indices;
+}
+
+/*export function cursorKey(key: string, prevSelection: MathGroup, postSelection: MathGroup) {
     return inputKey(key, prevSelection, [Cursor], postSelection, true);
 }
 export function selectionKey(key: string, selection: MathGroup) {
@@ -58,12 +197,29 @@ function inputKey(key: string, prevSelection: MathGroup, selection: MathGroup, p
         key = convertChars[key];
     }
     let autoSelection = cursor ? prevSelection : selection;
+    let prevElement = prevSelection[prevSelection.length-1];
     switch (key.toLowerCase()) {
         case "/":
             return [{operator: "frac", arguments: {numer: autoSelection, denom: [Cursor]}}, ...postSelection];
         case "^":
+            if (typeof prevElement == "object" && "operator" in prevElement && prevElement.operator == "sscript") {
+                if ("sup" in prevElement.arguments) {
+                    prevElement.arguments["sup"].push(Cursor);
+                } else {
+                    prevElement.arguments["sup"] = [Cursor];
+                }
+                return [...prevSelection, ...postSelection];
+            }
             return [...prevSelection, {operator: "sscript", arguments: {sup: selection}}, ...postSelection];
         case "_":
+            if (typeof prevElement == "object" && "operator" in prevElement && prevElement.operator == "sscript") {
+                if ("sub" in prevElement.arguments) {
+                    prevElement.arguments["sub"].push(Cursor);
+                } else {
+                    prevElement.arguments["sub"] = [Cursor];
+                }
+                return [...prevSelection, ...postSelection];
+            }
             return [...prevSelection, {operator: "sscript", arguments: {sub: selection}}, ...postSelection];
         case ")":
             return [{type: "", contents: autoSelection}, Cursor];
@@ -82,7 +238,8 @@ function inputKey(key: string, prevSelection: MathGroup, selection: MathGroup, p
         default:
             return [...prevSelection, key.charAt(0), Cursor, ...postSelection];
     }
-}
+}*/
+
 export function toDOM(units: MathGroup): DocumentFragment {
     let allowSelection = true;
     let mainFragment = new DocumentFragment();
@@ -126,13 +283,10 @@ export function toDOM(units: MathGroup): DocumentFragment {
                     node = document.createElement("z-brackets");
                     node.setAttribute("type", unit.type);
                     node.append(toDOM(unit.contents));
-                } else if ("selection" in unit) {
+                } else {
                     node = allowSelection ? document.createElement("z-selection") : new DocumentFragment();
                     allowSelection = false;
                     node.append(toDOM(unit.selection));
-                } else {
-                    node = document.createElement("z-text");
-                    node.append(toDOM(unit.text));
                 }
                 mainFragment.append(node);
             } else if (allowSelection && unit === Cursor) {
@@ -200,8 +354,6 @@ function fromDOMCollection(elements: Iterable<Element>): MathUnit[] {
                 name = element.textContent ?? "";
             }
             group.push({name: name, display: fromDOMCollection(element.children)});
-        } else if (tagName == "text") {
-            group.push({text: fromDOM(element.children)});
         } else if (tagName == "brackets") {
             group.push({type: element.getAttribute("type") ?? "", contents: fromDOMCollection(element.children)});
         } else if (tagName in argOrders || tagName == "int") {

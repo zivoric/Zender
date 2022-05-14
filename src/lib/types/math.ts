@@ -10,16 +10,14 @@ export interface LaTeXObject {
 export const SelectionStart: unique symbol = Symbol();
 export const SelectionEnd: unique symbol = Symbol();
 export const Cursor: unique symbol = Symbol();
-export type MathUnit = string | JsMathObj | FunctionObj | TextObj | BracketObj | SelectionObj | typeof Cursor;
+export type MathUnit = string | JsMathObj | FunctionObj | BracketObj | SelectionObj | typeof Cursor;
 export type MathGroup = (MathGroup|MathUnit)[];
 export type ArgumentList = {[arg: string]: MathGroup};
+export type SelectionIndex = (number|string)[];
 
 export interface BracketObj {
     type: string
     contents: MathGroup
-}
-export interface TextObj {
-    text: MathGroup
 }
 export interface SelectionObj {
     selection: MathGroup

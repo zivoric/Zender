@@ -26,6 +26,7 @@
       </span>-->
     </div>
     <script type="text/javascript">
+      let Cursor;
       let Z;
       let f;
       document.body.onload = function() {
@@ -33,6 +34,7 @@
         Z = Zender.getAPI();
         f = Z.field(document.getElementById("testfield"));
         console.log(f);
+        Cursor = Zender.DOMProcessor.fromDOM([document.createElement("z-cursor")])[0];
       }
     </script>
   </body>
