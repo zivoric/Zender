@@ -10,6 +10,10 @@
             }
         }
         z-selection {
+            z-cursor {
+                animation: none;
+                border-left-color: transparent;
+            }
             background-color: #ACCEF7;
         }
     }
@@ -28,19 +32,26 @@
         }
 
         z-sscript, z-frac, z-root  {
-            & > *:empty {
+            & > *:empty::before {
+                content: "\200B";
+                display: inline-block;
+                width: 1ch;
+                height: 1em;
                 background-color: rgba(0,0,0,0.15);
-                min-width: 0.75ch;
-                min-height: 0.75em;
             }
         }
 
         z-cursor {
             height: 1em;
             width: 0;
-            border-left: 1px solid transparent;
             margin-left: -1px;
             display: inline;
+            border-left: 1px solid transparent;
+            &:only-child::before {
+                content: "\200B";
+                width: 1ch;
+                display: inline-block;
+            }
         }
 
         @keyframes blink {
@@ -51,7 +62,7 @@
 
         z-selection {
             display: inline-block;
-            background-color: transparent;
+            background-color: #d1d1d1;
         }
 
         z-num, z-op, z-func {

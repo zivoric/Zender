@@ -10,9 +10,12 @@ import {
     BracketObj,
 } from "../types/math";
 
+const hasSelection = (value: MathUnit): boolean => {
+    return value == Cursor || (typeof value == "object" && "selection" in value);
+};
 
-const opChars = ["=","+","-","*","⋅","/"];
-const convertChars: {[op: string]: string} = {"*":"⋅"};
+const opChars = ["=","+","\u2212","⋅","/"," "];
+const convertChars: {[op: string]: string} = {"*":"⋅", "-":"\u2212"};
 const argOrders: {[op: string]: string[]} = {"frac": ["numer", "denom"], "sscript": ["sup", "sub"], "root":["ord", "arg"]};
 
 // Methods
@@ -37,6 +40,63 @@ export function inputKey(key: string, shift: boolean, contents: MathGroup): void
     let autoPrev = cursor ? [] : prev;
     let autoPost = cursor ? [] : post;
     switch (key.toLowerCase()) {
+        case "backspace":
+            if (cursor) {
+                if (prev.length > 0) {
+                    let prevElement = prev[prev.length-1];
+                    if (typeof prevElement == "object") {
+                        if ("operator" in prevElement) {
+                            let keys = Object.keys(prevElement.arguments);
+                            prevElement.arguments[keys[keys.length-1]].push(Cursor);
+                        } else {
+                            if ("display" in prevElement) {
+                                prevElement.display.push(Cursor);
+                            } else {
+                                prev.pop();
+                                prev.push(...getGroup(prevElement), Cursor);
+                            }
+                        }
+                    } else {
+                        prev.pop();
+                        prev.push(Cursor);
+                    }
+                    parent1.push(...prev, ...post);
+                } else {
+                    if (indices.length > 2 && "operator" in parent2) {
+                        let arg = indices[indices.length-2] as string;
+                        let parent3 = getGroup(fromIndex(contents, indices, 3)!);
+                        let i = indices[indices.length-3] as number;
+                        parent2.arguments[arg].push(Cursor, ...post);
+                        let argContents = parent2.arguments[arg];
+                        let vals = Object.values(parent2.arguments as ArgumentList).flat();
+                        delete parent2.arguments[arg];
+                        let len = Object.keys(parent2.arguments).length;
+                        switch (parent2.operator) {
+                            case "sscript":
+                                if (len == 0) {
+                                    parent3.splice(i,1,...vals);
+                                } else {
+                                    if (arg == "sup") {
+                                        parent3.splice(i+1,0,Cursor,...argContents);
+                                    } else {
+                                        parent3.splice(i,0,Cursor,...argContents);
+                                    }
+                                }
+                                break;
+                            default:
+                                parent3.splice(i,1,...vals);
+                        }
+                    } else if (indices.length > 1) {
+                        let group2 = getGroup(parent2);
+                        group2.splice(parentIndex, 1, Cursor, ...post);
+                    } else {
+                        parent1.push(Cursor, ...post);
+                    }
+                }
+            } else {
+                parent1.push(...prev, Cursor, ...post);
+            }
+            break;
         case "arrowleft":
             if (shift) {
                 let pivot = cursor || selection.pivot;
@@ -53,15 +113,12 @@ export function inputKey(key: string, shift: boolean, contents: MathGroup): void
                 } else {
                     if (sel.length == 1 && typeof sel[0] == "object") {
                         let obj = sel[0];
-                        let hasSelection = (value: MathUnit): boolean => {
-                            return value == Cursor || (typeof value == "object" && "selection" in value);
-                        };
                         if ("operator" in obj) {
                             let vals = Object.values(obj.arguments as ArgumentList);
                             replaceCursor = !vals.some(val=>val.some(hasSelection));
                         } else {
                             let group = getGroup(obj);
-                            replaceCursor = group.some(hasSelection);
+                            replaceCursor = !group.some(hasSelection);
                         }
                         if (!replaceCursor) {
                             post.unshift(sel.pop());
@@ -132,15 +189,12 @@ export function inputKey(key: string, shift: boolean, contents: MathGroup): void
                 } else {
                     if (sel.length == 1 && typeof sel[0] == "object") {
                         let obj = sel[0];
-                        let hasSelection = (value: MathUnit): boolean => {
-                            return value == Cursor || (typeof value == "object" && "selection" in value);
-                        };
                         if ("operator" in obj) {
                             let vals = Object.values(obj.arguments as ArgumentList);
                             replaceCursor = !vals.some(val=>val.some(hasSelection));
                         } else {
                             let group = getGroup(obj);
-                            replaceCursor = group.some(hasSelection);
+                            replaceCursor = !group.some(hasSelection);
                         }
                         if (!replaceCursor) {
                             prev.push(sel.shift());
@@ -331,15 +385,17 @@ export function fromIndex(group: MathGroup, index: SelectionIndex, parentLevel?:
 
 export function selectionIndex(contents: MathGroup): SelectionIndex {
     let indices: SelectionIndex = [];
-    for (let s in contents) {
-        let i = parseInt(s);
-        let unit = contents[i];
-        let subIndices: SelectionIndex;
-        if (typeof unit == "object") {
-            if ("selection" in unit) {
-                indices.push(i);
-                break;
-            } else {
+    let foundIndex = contents.findIndex(val => {
+        return val == Cursor || (typeof val == "object" && "selection" in val);
+    });
+    if (foundIndex != -1) {
+        indices.push(foundIndex);
+    } else {
+        for (let s in contents) {
+            let i = parseInt(s);
+            let unit = contents[i];
+            let subIndices: SelectionIndex;
+            if (typeof unit == "object") {
                 let val;
                 if ("contents" in unit) {
                     val = unit.contents;
@@ -347,22 +403,22 @@ export function selectionIndex(contents: MathGroup): SelectionIndex {
                 } else if ("display" in unit) {
                     val = unit.display;
                     subIndices = selectionIndex(val);
-                } else {
+                } else if ("operator" in unit) {
                     val = unit.arguments;
                     subIndices = selectionIndexArgs(val);
+                } else {
+                    subIndices = [];
                 }
+            } else {
+                subIndices = [];
             }
-        } else if (typeof unit == "symbol") {
-            indices.push(i);
-            break;
-        } else {
-            subIndices = [];
-        }
-        if (subIndices.length > 0) {
-            indices.push(i, ...subIndices);
-            break;
+            if (subIndices.length > 0) {
+                indices.push(i, ...subIndices);
+                break;
+            }
         }
     }
+    
     return indices;
 }
 
@@ -378,7 +434,8 @@ function selectionIndexArgs(args: ArgumentList): SelectionIndex {
     return indices;
 }
 
-export function toDOM(units: MathGroup, allowSelection = {allowed: true}): DocumentFragment {
+export function toDOM(units: MathGroup, allowSelection = true): DocumentFragment {
+    let hasSelect = units.some(hasSelection);
     let mainFragment = new DocumentFragment();
     for (let unit of units) {
         if (typeof unit == "object") {
@@ -398,7 +455,7 @@ export function toDOM(units: MathGroup, allowSelection = {allowed: true}): Docum
                     return 0;
                 }).map(entry => {
                     let el = document.createElement("z-" + entry[0]);
-                    el.append(toDOM(entry[1], allowSelection));
+                    el.append(toDOM(entry[1], !hasSelect));
                     return el;
                 }));
 
@@ -412,23 +469,23 @@ export function toDOM(units: MathGroup, allowSelection = {allowed: true}): Docum
             } else if ("name" in unit) {
                 node = document.createElement("z-func");
                 node.setAttribute("name", unit.name);
-                node.append(toDOM(unit.display, allowSelection));
+                node.append(toDOM(unit.display, !hasSelect));
             } else if ("type" in unit) {
                 node = document.createElement("z-brackets");
                 node.setAttribute("type", unit.type);
-                node.append(toDOM(unit.contents, allowSelection));
+                node.append(toDOM(unit.contents, !hasSelect));
             } else {
-                node = allowSelection.allowed ? document.createElement("z-selection") : new DocumentFragment();
-                if (allowSelection.allowed) {
+                node = allowSelection ? document.createElement("z-selection") : new DocumentFragment();
+                if (allowSelection) {
                     (node as HTMLElement).setAttribute("pivot", unit.pivot ? "right" : "left");
                 }
                 node.append(toDOM(unit.selection, allowSelection));
-                allowSelection.allowed = false;
+                allowSelection = false;
             }
             mainFragment.append(node);
-        } else if (allowSelection.allowed && unit === Cursor) {
+        } else if (allowSelection && unit === Cursor) {
             mainFragment.append(document.createElement("z-cursor"));
-            allowSelection.allowed = false;
+            allowSelection = false;
         } else if (typeof unit == "string") {
             for (let char of Array.from(unit)) {
                 let name;
@@ -457,8 +514,10 @@ export function fromDOM(elements: DocumentFragment|Iterable<Element>): MathGroup
 export function fromDOMItem(element: Element): MathUnit {
     return fromDOMCollection([element])[0];
 }
-function fromDOMCollection(elements: Iterable<Element>, allowSelection = {allowed: true}): MathUnit[] {
+function fromDOMCollection(iterable: Iterable<Element>, allowSelection = true): MathUnit[] {
+    let elements = Array.from(iterable);
     let group: MathUnit[] = [];
+    let hasSelect = elements.some(el => el.tagName == "z-cursor" || el.tagName == "z-selection");
     for (let element of elements) {
         if (element.tagName.substring(0,2).toLowerCase() != "z-") {
             continue;
@@ -467,13 +526,13 @@ function fromDOMCollection(elements: Iterable<Element>, allowSelection = {allowe
         if (tagName == "cursor") {
             if (allowSelection) {
                 group.push(Cursor);
-                allowSelection.allowed = false;
+                allowSelection = false;
             }
         } else if (tagName == "selection") {
             if (allowSelection) {
                 let pivot = element.getAttribute("pivot") ?? "left";
                 group.push({selection: fromDOMCollection(element.children, allowSelection), pivot: pivot == "right"});
-                allowSelection.allowed = false;
+                allowSelection = false;
             } else {
                 group.push(...fromDOMCollection(element.children, allowSelection));
             }
@@ -482,16 +541,16 @@ function fromDOMCollection(elements: Iterable<Element>, allowSelection = {allowe
             if (name.length == 0) {
                 name = element.textContent ?? "";
             }
-            group.push({name: name, display: fromDOMCollection(element.children, allowSelection)});
+            group.push({name: name, display: fromDOMCollection(element.children, !hasSelect)});
         } else if (tagName == "brackets") {
-            group.push({type: element.getAttribute("type") ?? "", contents: fromDOMCollection(element.children, allowSelection)});
+            group.push({type: element.getAttribute("type") ?? "", contents: fromDOMCollection(element.children, !hasSelect)});
         } else if (tagName in argOrders || tagName == "int") {
             let argOrder = argOrders[tagName == "int" ? "sscript" : tagName];
             let args: ArgumentList = {};
             for (let argName of argOrder) {
                 let argElements = element.querySelector(":scope > z-"+argName);
                 if (argElements) {
-                    let contents = fromDOMCollection(argElements.children, allowSelection);
+                    let contents = fromDOMCollection(argElements.children, !hasSelect);
                     args[argName] = contents;
                 }
             }
