@@ -17,88 +17,282 @@ const argOrders: {[op: string]: string[]} = {"frac": ["numer", "denom"], "sscrip
 
 // Methods
 
-export function cursorBackspace(parent1: MathUnit, parent2: MathUnit, index: string) {
-
-}
-
-export function emptyBackspace(parent1: MathUnit, parent2: MathUnit, index: string): [topParent: boolean, content?: MathGroup] {
-    if (typeof parent2 == "object") {
-        if ("operator" in parent2) {
-            switch (parent2.operator) {
-                case "frac":
-                    return [true, Object.values(parent2.arguments)];
-                case "sscript":
-                    delete parent2.arguments[index];
-                    if (Object.keys(parent2.arguments).length == 0) {
-                        return [true];
-                    } else {
-                        parent2.arguments[Object.keys(parent2.arguments)[0]].push(Cursor);
-                        return [true, [parent2]];
-                    }
-                case "root":
-                    if (index == "arg") {
-                        return [true];
-                    } else {
-                        delete parent2.arguments["ord"];
-                        return [true, [parent2]];
-                    }
-                default:
-                    return [true];
-            }
-        } else if ("display" in parent2) {
-            return [true];
-        }
+export function inputKey(key: string, shift: boolean, contents: MathGroup): void {
+    if (key in convertChars) {
+        key = convertChars[key];
     }
-    /*if (typeof parent1 == "object") {
-        if ("contents" in parent1 || "text" in parent1) {
-            return [false];
-        }
-    }*/
-    return [false];
-}
-
-export function inputKey(key: string, contents: MathGroup): void {
     let indices = selectionIndex(contents);
     let selection: any = fromIndex(contents, indices);
     let cursor = typeof selection == "symbol";
-    let parent1 = fromIndex(contents, indices, 1) as MathGroup;
-    let parent2: any = fromIndex(contents, indices, 2);
-    let parentIndex = indices[indices.length-2] as string;
+    let parent1 = getGroup(fromIndex(contents, indices, 1)!);
+    let parent2: any = indices.length >= 2 ? fromIndex(contents, indices, 2) : undefined;
+    let parentIndex: any = indices[indices.length-2];
     let index = indices[indices.length-1] as number;
     delete parent1[index];
     let prev = parent1.splice(0, index);
-    let post = parent1.splice(0);
-    let autoPrev: MathGroup = cursor ? prev : selection.selection;
+    let post = parent1.splice(1);
+    let sel = cursor ? [] : selection.selection;
+    let selPrev: MathGroup = cursor ? prev : sel;
+    let selPost: MathGroup = cursor ? post : sel;
+    let autoPrev = cursor ? [] : prev;
+    let autoPost = cursor ? [] : post;
     switch (key.toLowerCase()) {
+        case "arrowleft":
+            if (shift) {
+                let pivot = cursor || selection.pivot;
+                let replaceCursor = true;
+                if (pivot) {
+                    if (prev.length > 0) {
+                        sel.unshift(prev.pop());
+                    } else if (indices.length > 1) {
+                        let parentLevel = "operator" in parent2 ? 3 : 2;
+                        let group = getGroup(fromIndex(contents, indices, parentLevel)!);
+                        let pIndex = indices[indices.length-parentLevel] as number;
+                        group.splice(pIndex, 0, {selection: group.splice(pIndex, 1), pivot: pivot});
+                    }
+                } else {
+                    if (sel.length == 1 && typeof sel[0] == "object") {
+                        let obj = sel[0];
+                        let hasSelection = (value: MathUnit): boolean => {
+                            return value == Cursor || (typeof value == "object" && "selection" in value);
+                        };
+                        if ("operator" in obj) {
+                            let vals = Object.values(obj.arguments as ArgumentList);
+                            replaceCursor = !vals.some(val=>val.some(hasSelection));
+                        } else {
+                            let group = getGroup(obj);
+                            replaceCursor = group.some(hasSelection);
+                        }
+                        if (!replaceCursor) {
+                            post.unshift(sel.pop());
+                        }
+                    } else {
+                        post.unshift(sel.pop());
+                    }
+                }
+                if (replaceCursor) {
+                    if (sel.length == 0) {
+                        prev.push(Cursor);
+                    } else {
+                        prev.push({selection: sel, pivot: pivot});
+                    }
+                }
+                parent1.push(...prev, ...post);
+            } else {
+                if (cursor) {
+                    if (prev.length > 0) {
+                        let prevElement = prev[prev.length - 1];
+                        if (typeof prevElement == "object") {
+                            if ("operator" in prevElement) {
+                                let args = Object.keys(prevElement.arguments);
+                                prevElement.arguments[args[args.length - 1]].push(Cursor);
+                            } else {
+                                let group = getGroup(prevElement);
+                                group.push(Cursor);
+                            }
+                        } else {
+                            prev.splice(prev.length - 1, 0, Cursor);
+                        }
+                    } else if (parent2) {
+                        if ("operator" in parent2) {
+                            let args = Object.keys(parent2.arguments);
+                            let argIndex = args.indexOf(parentIndex);
+                            if (argIndex > 0) {
+                                parent2.arguments[args[argIndex - 1]].push(Cursor);
+                            } else {
+                                let parent3 = getGroup(fromIndex(contents, indices, 3)!);
+                                parent3.splice(indices[indices.length - 3] as number, 0, Cursor);
+                            }
+                        } else {
+                            let group2 = getGroup(parent2);
+                            group2.splice(parentIndex, 0, Cursor);
+                        }
+                    } else {
+                        prev.push(Cursor);
+                    }
+                    parent1.push(...prev, ...post);
+                } else {
+                    parent1.push(...prev, Cursor, ...sel, ...post);
+                }
+            }
+            break;
+        case "arrowright":
+            if (shift) {
+                let pivot = !cursor && selection.pivot;
+                let replaceCursor = true;
+                if (!pivot) {
+                    if (post.length > 0) {
+                        sel.push(post.shift());
+                    } else if (indices.length > 1) {
+                        let parentLevel = "operator" in parent2 ? 3 : 2;
+                        let group = getGroup(fromIndex(contents, indices, parentLevel)!);
+                        let pIndex = indices[indices.length-parentLevel] as number;
+                        group.splice(pIndex, 0, {selection: group.splice(pIndex, 1), pivot: pivot});
+                    }
+                } else {
+                    if (sel.length == 1 && typeof sel[0] == "object") {
+                        let obj = sel[0];
+                        let hasSelection = (value: MathUnit): boolean => {
+                            return value == Cursor || (typeof value == "object" && "selection" in value);
+                        };
+                        if ("operator" in obj) {
+                            let vals = Object.values(obj.arguments as ArgumentList);
+                            replaceCursor = !vals.some(val=>val.some(hasSelection));
+                        } else {
+                            let group = getGroup(obj);
+                            replaceCursor = group.some(hasSelection);
+                        }
+                        if (!replaceCursor) {
+                            prev.push(sel.shift());
+                        }
+                    } else {
+                        prev.push(sel.shift());
+                    }
+                }
+                if (replaceCursor) {
+                    if (sel.length == 0) {
+                        prev.push(Cursor);
+                    } else {
+                        prev.push({selection: sel, pivot: pivot});
+                    }
+                }
+                parent1.push(...prev, ...post);
+            } else {
+                if (cursor) {
+                    if (post.length > 0) {
+                        let postElement = post[0];
+                        if (typeof postElement == "object") {
+                            if ("operator" in postElement) {
+                                let args = Object.keys(postElement.arguments);
+                                postElement.arguments[args[0]].unshift(Cursor);
+                            } else {
+                                let group = getGroup(postElement);
+                                group.unshift(Cursor);
+                            }
+                        } else {
+                            post.splice(1, 0, Cursor);
+                        }
+                    } else if (parent2) {
+                        if ("operator" in parent2) {
+                            let args = Object.keys(parent2.arguments);
+                            let argIndex = args.indexOf(parentIndex);
+                            if (argIndex < args.length - 1) {
+                                parent2.arguments[args[argIndex + 1]].unshift(Cursor);
+                            } else {
+                                let parent3 = getGroup(fromIndex(contents, indices, 3)!);
+                                parent3.splice(indices[indices.length - 3] as number + 1, 0, Cursor);
+                            }
+                        } else {
+                            let group2 = getGroup(parent2);
+                            group2.splice(parentIndex + 1, 0, Cursor);
+                        }
+                    } else {
+                        post.unshift(Cursor);
+                    }
+                    parent1.push(...prev, ...post);
+                } else {
+                    parent1.push(...prev, ...sel, Cursor, ...post);
+                }
+            }
+            break;
         case "/":
-            parent1.splice(index, 0, [{operator:"frac", arguments:{"numer":[prev],"denom":[Cursor]}}, ...post]);
+            parent1.splice(index, 0, ...autoPrev, {operator: "frac", arguments: {"numer": [...selPrev], "denom": [Cursor]}}, ...post);
             break;
         case "^":
-            if (parentIndex == "sub") {
+            if (parentIndex == "sub" && parent2.operator == "sscript") {
                 if (parent2.arguments["sup"]) {
                     parent2.arguments["sup"].push(Cursor);
                 } else {
                     parent2.arguments["sup"] = [Cursor];
                 }
-                parent1.push(...autoPrev, post);
+                parent1.push(...prev, ...sel, ...post);
             } else {
-                
+                let prevElement = prev.slice(prev.length-1, prev.length)[0];
+                let postElement = post.slice(0,1)[0];
+                if (typeof prevElement == "object" && "operator" in prevElement && (prevElement.operator == "sscript")) {
+                    if (prevElement.arguments["sup"]) {
+                        prevElement.arguments["sup"].push(...sel, Cursor);
+                    } else {
+                        prevElement.arguments["sup"] = [...sel, Cursor];
+                    }
+                    parent1.push(...prev, ...post);
+                } else if (typeof postElement == "object" && "operator" in postElement && (postElement.operator == "sscript")) {
+                    if (postElement.arguments["sup"]) {
+                        postElement.arguments["sup"].unshift(Cursor, ...sel);
+                    } else {
+                        postElement.arguments["sup"] = [Cursor, ...sel];
+                    }
+                    parent1.push(...prev, ...post);
+                } else {
+                    parent1.push(...prev, {operator: "sscript", arguments:{sup:[...sel, Cursor]}}, ...post);
+                }
             }
+            break;
         case "_":
+            if (parentIndex == "sup" && parent2.operator == "sscript") {
+                if (parent2.arguments["sub"]) {
+                    parent2.arguments["sub"].push(Cursor);
+                } else {
+                    parent2.arguments["sub"] = [Cursor];
+                }
+                parent1.push(...prev, ...sel, ...post);
+            } else {
+                let prevElement = prev.slice(prev.length-1, prev.length)[0];
+                let postElement = post.slice(0,1)[0];
+                if (typeof prevElement == "object" && "operator" in prevElement && (prevElement.operator == "sscript")) {
+                    if (prevElement.arguments["sub"]) {
+                        prevElement.arguments["sub"].push(...sel, Cursor);
+                    } else {
+                        prevElement.arguments["sub"] = [...sel, Cursor];
+                    }
+                    parent1.push(...prev, ...post);
+                } else if (typeof postElement == "object" && "operator" in postElement && (postElement.operator == "sscript")) {
+                    if (postElement.arguments["sub"]) {
+                        postElement.arguments["sub"].unshift(Cursor, ...sel);
+                    } else {
+                        postElement.arguments["sub"] = [Cursor, ...sel];
+                    }
+                    parent1.push(...prev, ...post);
+                } else {
+                    parent1.push(...prev, {operator: "sscript", arguments:{sub:[...sel, Cursor]}}, ...post);
+                }
+            }
+            break;
         case ")":
+            parent1.push(...autoPrev, {type: "", contents: selPrev}, Cursor, ...post);
+            break;
         case "]":
+            parent1.push(...autoPrev, {type: "square", contents: selPrev}, Cursor, ...post);
+            break;
         case "}":
+            parent1.push(...autoPrev, {type: "curly", contents: selPrev}, Cursor, ...post);
+            break;
         case "(":
+            parent1.push(...prev, {type: "", contents: [Cursor, ...selPost]}, ...autoPost);
+            break;
         case "[":
+            parent1.push(...prev, {type: "square", contents: [Cursor, ...selPost]}, ...autoPost);
+            break;
         case "{":
+            parent1.push(...prev, {type: "curly", contents: [Cursor, ...selPost]}, ...autoPost);
+            break;
         case "|":
+            parent1.push(...prev, {type: "abs", contents: [Cursor, ...selPost]}, ...autoPost);
+            break;
         default:
+            if (key.length == 1 && (/[a-zA-Z0-9]/.test(key) || opChars.includes(key))) {
+                parent1.push(...prev, key, Cursor, ...post);
+            } else {
+                parent1.push(...prev, selection, ...post);
+            }
     }
 }
 
-function toGroup(unit: MathUnit): MathGroup {
+function getGroup(unit: MathUnit|MathGroup): MathGroup {
     let val: MathGroup = [];
-    if (typeof unit == "object") {
+    if (Array.isArray(unit)) {
+        return unit;
+    } else if (typeof unit == "object") {
         if ("contents" in unit) {
             val = unit.contents;
         } else if ("display" in unit) {
@@ -123,7 +317,7 @@ export function fromIndex(group: MathGroup, index: SelectionIndex, parentLevel?:
             if (Array.isArray(layer)) {
                 layer = layer[i];
             } else {
-                layer = toGroup(layer)[i];
+                layer = getGroup(layer)[i];
             }
         } else if (typeof layer == "object" && "arguments" in layer) {
             layer = layer.arguments[i];
@@ -141,9 +335,7 @@ export function selectionIndex(contents: MathGroup): SelectionIndex {
         let i = parseInt(s);
         let unit = contents[i];
         let subIndices: SelectionIndex;
-        if (Array.isArray(unit)) {
-            subIndices = selectionIndex(unit);
-        } else if (typeof unit == "object") {
+        if (typeof unit == "object") {
             if ("selection" in unit) {
                 indices.push(i);
                 break;
@@ -186,126 +378,70 @@ function selectionIndexArgs(args: ArgumentList): SelectionIndex {
     return indices;
 }
 
-/*export function cursorKey(key: string, prevSelection: MathGroup, postSelection: MathGroup) {
-    return inputKey(key, prevSelection, [Cursor], postSelection, true);
-}
-export function selectionKey(key: string, selection: MathGroup) {
-    return inputKey(key, [], selection, [], false);
-}
-function inputKey(key: string, prevSelection: MathGroup, selection: MathGroup, postSelection: MathGroup, cursor: boolean): MathGroup {
-    if (key in convertChars) {
-        key = convertChars[key];
-    }
-    let autoSelection = cursor ? prevSelection : selection;
-    let prevElement = prevSelection[prevSelection.length-1];
-    switch (key.toLowerCase()) {
-        case "/":
-            return [{operator: "frac", arguments: {numer: autoSelection, denom: [Cursor]}}, ...postSelection];
-        case "^":
-            if (typeof prevElement == "object" && "operator" in prevElement && prevElement.operator == "sscript") {
-                if ("sup" in prevElement.arguments) {
-                    prevElement.arguments["sup"].push(Cursor);
-                } else {
-                    prevElement.arguments["sup"] = [Cursor];
-                }
-                return [...prevSelection, ...postSelection];
-            }
-            return [...prevSelection, {operator: "sscript", arguments: {sup: selection}}, ...postSelection];
-        case "_":
-            if (typeof prevElement == "object" && "operator" in prevElement && prevElement.operator == "sscript") {
-                if ("sub" in prevElement.arguments) {
-                    prevElement.arguments["sub"].push(Cursor);
-                } else {
-                    prevElement.arguments["sub"] = [Cursor];
-                }
-                return [...prevSelection, ...postSelection];
-            }
-            return [...prevSelection, {operator: "sscript", arguments: {sub: selection}}, ...postSelection];
-        case ")":
-            return [{type: "", contents: autoSelection}, Cursor];
-        case "]":
-            return [{type: "square", contents: autoSelection}, Cursor];
-        case "}":
-            return [{type: "curly", contents: autoSelection}, Cursor];
-        case "(":
-            return [...prevSelection, {type: "", contents: [...selection, ...postSelection]}];
-        case "[":
-            return [...prevSelection, {type: "square", contents: [...selection, ...postSelection]}];
-        case "{":
-            return [...prevSelection, {type: "curly", contents: [...selection, ...postSelection]}];
-        case "|":
-            return [...prevSelection, {type: "abs", contents: [...selection, ...postSelection]}];
-        default:
-            return [...prevSelection, key.charAt(0), Cursor, ...postSelection];
-    }
-}*/
-
-export function toDOM(units: MathGroup): DocumentFragment {
-    let allowSelection = true;
+export function toDOM(units: MathGroup, allowSelection = {allowed: true}): DocumentFragment {
     let mainFragment = new DocumentFragment();
     for (let unit of units) {
-        if (Array.isArray(unit)) {
-            mainFragment.append(toDOM(unit));
-        } else {
-            if (typeof unit == "object") {
-                let node;
-                if ("operator" in unit) {
-                    let op = unit.operator;
-                    if (op == "int") {
-                        node = document.createElement("z-sscript");
-                    } else {
-                        node = document.createElement("z-" + op);
-                    }
-
-                    node.append(...Object.entries(unit.arguments).sort((a, b) => {
-                        if (op in argOrders) {
-                            return argOrders[op].indexOf(a[0]) - argOrders[op].indexOf(b[0]);
-                        }
-                        return 0;
-                    }).map(entry => {
-                        let el = document.createElement("z-" + entry[0]);
-                        el.append(toDOM(entry[1]));
-                        return el;
-                    }));
-
-                    if (op == "int") {
-                        let sscript = node;
-                        node = document.createElement("z-"+op);
-                        if (sscript.children.length > 0) {
-                            node.append(sscript);
-                        }
-                    }
-                } else if ("name" in unit) {
-                    node = document.createElement("z-func");
-                    node.setAttribute("name", unit.name);
-                    node.append(toDOM(unit.display));
-                } else if ("type" in unit) {
-                    node = document.createElement("z-brackets");
-                    node.setAttribute("type", unit.type);
-                    node.append(toDOM(unit.contents));
+        if (typeof unit == "object") {
+            let node;
+            if ("operator" in unit) {
+                let op = unit.operator;
+                if (op == "int") {
+                    node = document.createElement("z-sscript");
                 } else {
-                    node = allowSelection ? document.createElement("z-selection") : new DocumentFragment();
-                    allowSelection = false;
-                    node.append(toDOM(unit.selection));
+                    node = document.createElement("z-" + op);
                 }
-                mainFragment.append(node);
-            } else if (allowSelection && unit === Cursor) {
-                mainFragment.append(document.createElement("z-cursor"));
-                allowSelection = false;
-            } else if (typeof unit == "string") {
-                for (let char of Array.from(unit)) {
-                    let name;
-                    if (/\d/.test(char)) {
-                        name = "z-num";
-                    } else if (opChars.includes(char)) {
-                        name = "z-op";
-                    } else {
-                        name = "z-var";
+
+                node.append(...Object.entries(unit.arguments).sort((a, b) => {
+                    if (op in argOrders) {
+                        return argOrders[op].indexOf(a[0]) - argOrders[op].indexOf(b[0]);
                     }
-                    let el = document.createElement(name);
-                    el.append(char);
-                    mainFragment.append(el);
+                    return 0;
+                }).map(entry => {
+                    let el = document.createElement("z-" + entry[0]);
+                    el.append(toDOM(entry[1], allowSelection));
+                    return el;
+                }));
+
+                if (op == "int") {
+                    let sscript = node;
+                    node = document.createElement("z-"+op);
+                    if (sscript.children.length > 0) {
+                        node.append(sscript);
+                    }
                 }
+            } else if ("name" in unit) {
+                node = document.createElement("z-func");
+                node.setAttribute("name", unit.name);
+                node.append(toDOM(unit.display, allowSelection));
+            } else if ("type" in unit) {
+                node = document.createElement("z-brackets");
+                node.setAttribute("type", unit.type);
+                node.append(toDOM(unit.contents, allowSelection));
+            } else {
+                node = allowSelection.allowed ? document.createElement("z-selection") : new DocumentFragment();
+                if (allowSelection.allowed) {
+                    (node as HTMLElement).setAttribute("pivot", unit.pivot ? "right" : "left");
+                }
+                node.append(toDOM(unit.selection, allowSelection));
+                allowSelection.allowed = false;
+            }
+            mainFragment.append(node);
+        } else if (allowSelection.allowed && unit === Cursor) {
+            mainFragment.append(document.createElement("z-cursor"));
+            allowSelection.allowed = false;
+        } else if (typeof unit == "string") {
+            for (let char of Array.from(unit)) {
+                let name;
+                if (/\d/.test(char)) {
+                    name = "z-num";
+                } else if (opChars.includes(char)) {
+                    name = "z-op";
+                } else {
+                    name = "z-var";
+                }
+                let el = document.createElement(name);
+                el.append(char);
+                mainFragment.append(el);
             }
         }
     }
@@ -321,60 +457,48 @@ export function fromDOM(elements: DocumentFragment|Iterable<Element>): MathGroup
 export function fromDOMItem(element: Element): MathUnit {
     return fromDOMCollection([element])[0];
 }
-function fromDOMCollection(elements: Iterable<Element>): MathUnit[] {
+function fromDOMCollection(elements: Iterable<Element>, allowSelection = {allowed: true}): MathUnit[] {
     let group: MathUnit[] = [];
-    let currentNumber = "";
-    let allowSelection = true;
     for (let element of elements) {
         if (element.tagName.substring(0,2).toLowerCase() != "z-") {
             continue;
         }
         let tagName = element.tagName.substring(2).toLowerCase();
-        if (tagName == "num") {
-            currentNumber += element.textContent ?? "";
-        } else if (currentNumber.length > 0) {
-            group.push(currentNumber);
-            currentNumber = "";
-        }
         if (tagName == "cursor") {
             if (allowSelection) {
                 group.push(Cursor);
-                allowSelection = false;
+                allowSelection.allowed = false;
             }
         } else if (tagName == "selection") {
             if (allowSelection) {
-                group.push({selection: fromDOMCollection(element.children)});
-                allowSelection = false;
+                let pivot = element.getAttribute("pivot") ?? "left";
+                group.push({selection: fromDOMCollection(element.children, allowSelection), pivot: pivot == "right"});
+                allowSelection.allowed = false;
             } else {
-                group.push(...fromDOMCollection(element.children));
+                group.push(...fromDOMCollection(element.children, allowSelection));
             }
         } else if (tagName == "func") {
             let name = element.getAttribute("name") ?? "";
             if (name.length == 0) {
                 name = element.textContent ?? "";
             }
-            group.push({name: name, display: fromDOMCollection(element.children)});
+            group.push({name: name, display: fromDOMCollection(element.children, allowSelection)});
         } else if (tagName == "brackets") {
-            group.push({type: element.getAttribute("type") ?? "", contents: fromDOMCollection(element.children)});
+            group.push({type: element.getAttribute("type") ?? "", contents: fromDOMCollection(element.children, allowSelection)});
         } else if (tagName in argOrders || tagName == "int") {
             let argOrder = argOrders[tagName == "int" ? "sscript" : tagName];
             let args: ArgumentList = {};
             for (let argName of argOrder) {
-                let argElements = element.getElementsByTagName("z-"+argName);
-                if (argElements.length > 0) {
-                    let contents = fromDOMCollection(argElements[0].children);
-                    if (contents.length > 0) {
-                        args[argName] = contents;
-                    }
+                let argElements = element.querySelector(":scope > z-"+argName);
+                if (argElements) {
+                    let contents = fromDOMCollection(argElements.children, allowSelection);
+                    args[argName] = contents;
                 }
             }
             group.push({operator: tagName, arguments: args});
-        } else if (tagName != "num") {
+        } else {
             group.push(element.textContent ?? "");
         }
-    }
-    if (currentNumber.length > 0) {
-        group.push(currentNumber);
     }
     return group;
 }

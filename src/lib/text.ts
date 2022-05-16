@@ -43,8 +43,13 @@ export class MathField extends MathText {
         el.setAttribute("tabindex", "-1");
         this.contents.append(document.createElement("z-cursor"));
         el.addEventListener("keydown", (e) => {
-            e.preventDefault();
-            let cursor = false;
+            if (!e.ctrlKey) {
+                e.preventDefault();
+                let contents = DP.fromDOM(this.contents.children);
+                DP.inputKey(e.key, e.shiftKey, contents);
+                this.contents.replaceChildren(DP.toDOM(contents));
+            }
+            /*let cursor = false;
             let selection = this.contents.getElementsByTagName("z-selection")[0];
             if (!selection) {
                 cursor = true;
@@ -93,7 +98,7 @@ export class MathField extends MathText {
                     } else {
                         selection.replaceChildren(DP.toDOM(DP.selectionKey(e.key ?? "", DP.fromDOM(selection.children))));
                     }
-            }
+            }*/
         });
     }
 }

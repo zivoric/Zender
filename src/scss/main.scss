@@ -3,8 +3,11 @@
 [z-field] {
     &:focus z-contents {
         z-cursor {
-            border-right-color: black;
-            animation: blink 1s step-start infinite;
+            border-left-color: black;
+            animation: blink 1s step-start 0.5s infinite;
+            &[noblink] {
+                animation: none;
+            }
         }
         z-selection {
             background-color: #ACCEF7;
@@ -13,7 +16,9 @@
     z-contents {
         font: 1em "XITS", "XITS Math", serif;
         font-variant-ligatures: none;
+        font-kerning: none;
         user-select: none;
+        white-space: nowrap;
         display: inline-block;
 
         * {
@@ -22,11 +27,20 @@
             line-height: 120%;
         }
 
+        z-sscript, z-frac, z-root  {
+            & > *:empty {
+                background-color: rgba(0,0,0,0.15);
+                min-width: 0.75ch;
+                min-height: 0.75em;
+            }
+        }
+
         z-cursor {
             height: 1em;
             width: 0;
-            border-right: solid 1px transparent;
+            border-left: 1px solid transparent;
             margin-left: -1px;
+            display: inline;
         }
 
         @keyframes blink {
@@ -42,6 +56,11 @@
 
         z-num, z-op, z-func {
             font-style: normal;
+            font-kerning: normal;
+        }
+
+        z-num, z-op, z-func, z-var {
+            display: inline-block;
         }
 
         z-op {
@@ -55,6 +74,7 @@
         z-var {
             font-style: italic;
             font-size: 1em;
+            min-width: 0.8ch;
         }
 
         z-sscript, z-frac {
@@ -82,6 +102,7 @@
 
             z-sup, z-sub {
                 font-size: 0.75em;
+                text-align: left;
             }
 
             & z-sscript {
@@ -219,12 +240,10 @@
             }
 
             > z-sscript > z-sup {
-                text-align: left;
                 transform: translate(0.4em, -0.4em);
             }
 
             > z-sscript > z-sub {
-                text-align: left;
                 transform: translate(-0.2em, 0.4em);
             }
         }

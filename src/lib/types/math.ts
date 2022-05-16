@@ -11,7 +11,7 @@ export const SelectionStart: unique symbol = Symbol();
 export const SelectionEnd: unique symbol = Symbol();
 export const Cursor: unique symbol = Symbol();
 export type MathUnit = string | JsMathObj | FunctionObj | BracketObj | SelectionObj | typeof Cursor;
-export type MathGroup = (MathGroup|MathUnit)[];
+export type MathGroup = MathUnit[];
 export type ArgumentList = {[arg: string]: MathGroup};
 export type SelectionIndex = (number|string)[];
 
@@ -21,6 +21,7 @@ export interface BracketObj {
 }
 export interface SelectionObj {
     selection: MathGroup
+    pivot: boolean // false = left; true = right
 }
 export interface FunctionObj {
     name: string,
