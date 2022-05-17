@@ -1,7 +1,7 @@
 import * as Text from './types/texts'
 import {LaTeXProcessor as LP, DOMProcessor as DP} from '../index';
 import { Optionable } from './types/api';
-import { Cursor } from './types/math';
+import {Cursor, MathGroup} from './types/math';
 
 export class MathText extends Optionable<Text.TextOptions> implements Text.IMathText {
     private static readonly _defaultOptions: Text.TextOptions = {
@@ -29,25 +29,36 @@ export class MathText extends Optionable<Text.TextOptions> implements Text.IMath
         }
         el.append(this._contents);
     }
-    get contents(): HTMLElement {
+    get contentHTML(): HTMLElement {
         return this._contents;
     }
+
+    get contentJS(): MathGroup {
+        return DP.fromDOM(this._contents.children);
+    }
+
     get element(): HTMLElement {
         return this._element;
     }
 }
 
 export class MathField extends MathText {
+    #disabled: boolean = false;
     constructor(el: HTMLElement, options?: Text.TextOptions) {
         super(el, options);
         el.setAttribute("tabindex", "-1");
-        this.contents.append(document.createElement("z-cursor"));
+        this.contentHTML.append(document.createElement("z-cursor"));
+        el.addEventListener("mousedown", e => {
+            if (this.#disabled) {
+                e.preventDefault();
+            }
+        });
         el.addEventListener("keydown", (e) => {
             if (!e.ctrlKey) {
                 e.preventDefault();
-                let contents = DP.fromDOM(this.contents.children);
+                let contents = this.contentJS;
                 DP.inputKey(e.key, e.shiftKey, contents);
-                this.contents.replaceChildren(DP.toDOM(contents));
+                this.contentHTML.replaceChildren(DP.toDOM(contents));
             }
             /*let cursor = false;
             let selection = this.contents.getElementsByTagName("z-selection")[0];
@@ -100,5 +111,11 @@ export class MathField extends MathText {
                     }
             }*/
         });
+    }
+    get disabled(): boolean {
+        return this.#disabled;
+    }
+    set disabled(value) {
+        this.#disabled = !!(value as any);
     }
 }
