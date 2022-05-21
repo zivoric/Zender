@@ -1,17 +1,63 @@
-import {LaTeXGroup, LaTeXUnit} from "../types/math";
-
+import { ArgumentList, MathGroup } from "../types/math";
+import { argOrders } from "./dom";
 
 const simpleOps = [ "=","+","-","*","/", // Symbols
     "\\left", "\\right", "\\{", "\\}", "[", "]", "(", ")", // Delimiters
     "\\pi", "\\epsilon" // Letters
 ];
 
+const parseRegex = /(\\[a-z]+)|(\\.)|(\[.*?\])|({.*?})|./gi;
+
+const convertArgs: {[latex: string]: string} = {"sqrt":"root"};
+
+const optionalNums: {[op: string]: number} = {"sqrt":1};
+
 // Format - "operator name": [required args, optional args]
-const complexOps: {[op: string]: [number, number]} = {"\\frac":[2,0], "^":[1,0], "_":[1,0], "\\operatorname":[1,0], "\\sqrt":[1,1]};
 type InvalidMode = "convert"|"remove"|"include";
 
 // Methods
 
+export function parse(text: string, invalidMode: InvalidMode = "convert"): MathGroup {
+    let separated = text.match(parseRegex);
+    let group: MathGroup = [];
+    if (separated) {
+        while (separated.length > 0) {
+            let first: string = separated.splice(0,1)[0];
+            if (first.charAt(0) == "\\") {
+                let op = first.substring(1);
+                if (op in convertArgs) {
+                    op = convertArgs[op];
+                }
+                switch (op) {
+                    default:
+                        if (op in argOrders) {
+                            let argList: ArgumentList = {};
+                            let optional = op in optionalNums ? optionalNums[op] : 0;
+                            let currentArg = separated.splice(0,1)[0];
+                            for (let argName of argOrders[op]) {
+                                if (separated.length == 0) {
+                                    break;
+                                }
+                                if (currentArg.startsWith("[") && currentArg.endsWith("]")) {
+                                    if (optional) {
+                                        argList[argName] = parse(currentArg.substring(1,currentArg.length-1));
+                                    } else {
+                                        separated.unshift("[", ...currentArg.substring(1,currentArg.length-1).match(parseRegex) ?? [], "]");
+                                    }
+                                    currentArg = separated.splice(0,1)[0];
+                                } else {
+                                    argList[argName] = parse(separated.splice(0,1)[0]);
+                                }
+                            }
+                        }
+                } 
+            }
+        }
+    }
+    return group;
+}
+
+/*
 export function serialize(group: LaTeXGroup): string {
     if (!Array.isArray(group)) {
         return serializeUnit(group);
@@ -156,4 +202,4 @@ function generateJsObject(args: string, operator: string): [number, LaTeXUnit] {
         obj.optional = optional[1];
     }
     return [(optional?.[0] ?? 0) + required[0], obj];
-}
+}*/
