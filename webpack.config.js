@@ -28,7 +28,7 @@ module.exports = {
         {
             test: /\.scss$/,
             include: path.resolve(__dirname, 'src/scss'),
-            use: ['style-loader','css-loader','sass-loader']
+            use: ['style-loader','css-loader','postcss-loader','sass-loader']
         }
     ]}
 };

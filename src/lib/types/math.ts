@@ -1,16 +1,16 @@
-export type LaTeXUnit = string | LaTeXObject;
+/*export type LaTeXUnit = string | LaTeXObject;
 export type LaTeXGroup = LaTeXUnit | LaTeXUnit[];
 
 export interface LaTeXObject {
     operator: string,
     optional?: LaTeXGroup[]
     required?: LaTeXGroup[]
-}
+}*/
 
 export const SelectionStart: unique symbol = Symbol();
 export const SelectionEnd: unique symbol = Symbol();
 export const Cursor: unique symbol = Symbol();
-export type MathUnit = string | JsMathObj | FunctionObj | BracketObj | SelectionObj | typeof Cursor;
+export type MathUnit = string | JsMathObj | FunctionObj | BracketObj | SelectionObj | LaTeXObj | typeof Cursor;
 export type MathGroup = MathUnit[];
 export type ArgumentList = {[arg: string]: MathGroup};
 export type SelectionIndex = (number|string)[];
@@ -30,6 +30,10 @@ export interface FunctionObj {
 export interface JsMathObj {
     operator: string,
     arguments: ArgumentList
+}
+
+export interface LaTeXObj {
+    latex: MathGroup
 }
 
 /* example object:

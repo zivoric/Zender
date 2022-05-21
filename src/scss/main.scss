@@ -3,7 +3,7 @@
 [z-field] {
     &:focus z-contents {
         z-cursor {
-            border-left-color: black;
+            border-right-color: currentColor;
             animation: blink 1s step-start 0.5s infinite;
             &[noblink] {
                 animation: none;
@@ -12,7 +12,7 @@
         z-selection {
             z-cursor {
                 animation: none;
-                border-left-color: transparent;
+                border-right-color: transparent;
             }
             background-color: #ACCEF7;
         }
@@ -44,13 +44,11 @@
         z-cursor {
             height: 1em;
             width: 0;
-            margin-left: -1px;
+            margin-right: -1px;
             display: inline;
-            border-left: 1px solid transparent;
-            &:only-child::before {
-                content: "\200B";
-                width: 1ch;
-                display: inline-block;
+            border-right: 1px solid transparent;
+            &:only-child {
+                margin-right: calc(1ch - 1px);
             }
         }
 
@@ -86,6 +84,29 @@
             font-style: italic;
             font-size: 1em;
             min-width: 0.8ch;
+        }
+
+        z-latex {
+            font-family: "Courier Prime", "Courier New", monospace;
+            min-width: calc(2ch + 0.5em);
+            border: 1px solid #a4a4a4;
+            padding: 0 0.2em;
+            margin: 0 0.2em;
+            display: inline-block;
+            text-align: left;
+
+            * {
+                line-height: 100%;
+            }
+            &::before {
+                content: "$";
+            }
+            z-var {
+                font-style: normal;
+            }
+            z-op {
+                padding: 0;
+            }
         }
 
         z-sscript, z-frac {
@@ -132,7 +153,7 @@
 
             z-numer {
                 padding-bottom: 0;
-                border-bottom: 0.05em solid black;
+                border-bottom: 0.05em solid currentColor;
 
                 > z-frac {
                     margin-bottom: -0.2em;
@@ -171,16 +192,17 @@
                 padding: 0.15em;
                 padding-bottom: 0;
                 margin-left: -0.04em;
-                border-top: 0.05em black solid;
+                border-top: 0.05em currentColor solid;
             }
 
             &::before {
                 padding-right: 0.75em;
                 content: "";
-                background-repeat: no-repeat;
-                background-position: top;
-                background-size: 100% calc(100% - 0.15em);
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="112 -222 850 1200" preserveAspectRatio="none"> <path fill="currentColor" d="M963 -223l-478 1232h-32l-202 -530c-17 -45 -37 -59 -62 -59c-17 0 -43 11 -65 31l-12 -20l156 -124h19l204 536h4l414 -1066h54z" /> </svg>');
+                mask-repeat: no-repeat;
+                mask-position: top;
+                mask-size: 100% calc(100% - 0.15em);
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="112 -222 850 1200" preserveAspectRatio="none"> <path fill="currentColor" d="M963 -223l-478 1232h-32l-202 -530c-17 -45 -37 -59 -62 -59c-17 0 -43 11 -65 31l-12 -20l156 -124h19l204 536h4l414 -1066h54z" /> </svg>');
+                background-color: currentColor;
             }
 
             &::after {
@@ -201,42 +223,43 @@
 
             &::before, &::after {
                 width: 0.5em;
-                background-size: 43% 100%;
-                background-repeat: no-repeat;
+                mask-size: 43% 100%;
+                mask-repeat: no-repeat;
                 content: "\200B";
                 vertical-align: middle;
                 display: flex;
                 align-self: stretch;
                 align-items: center;
-                background-position: center;
+                mask-position: center;
+                background-color: currentColor;
             }
 
             &::before {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="48 73 256 860" preserveAspectRatio="none"> <path fill="currentColor" d="M304 911l-12 16c-158 -90 -244 -259 -244 -429c0 -185 87 -329 247 -424l9 16c-139 119 -170 212 -170 405c0 186 30 299 170 416z"/></svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="48 73 256 860" preserveAspectRatio="none"> <path fill="currentColor" d="M304 911l-12 16c-158 -90 -244 -259 -244 -429c0 -185 87 -329 247 -424l9 16c-139 119 -170 212 -170 405c0 186 30 299 170 416z"/></svg>');
             }
 
             &::after {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="29 72 256 858" preserveAspectRatio="none">   <path fill="currentColor" d="M29 90l12 -16c153 92 244 259 244 429c0 185 -88 327 -247 424l-9 -16c142 -117 170 -211 170 -405c0 -187 -25 -302 -170 -416z"/></svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="29 72 256 858" preserveAspectRatio="none">   <path fill="currentColor" d="M29 90l12 -16c153 92 244 259 244 429c0 185 -88 327 -247 424l-9 -16c142 -117 170 -211 170 -405c0 -187 -25 -302 -170 -416z"/></svg>');
             }
 
             &[type="square"]::before {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="88 88 211 819" preserveAspectRatio="none"> <path fill="currentColor" d="M299 906h-211v-818h211v25h-83c-34 0 -52 12 -52 48v666c0 40 19 54 52 54h83v25z"/></svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="88 88 211 819" preserveAspectRatio="none"> <path fill="currentColor" d="M299 906h-211v-818h211v25h-83c-34 0 -52 12 -52 48v666c0 40 19 54 52 54h83v25z"/></svg>');
             }
 
             &[type="square"]::after {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="34 88 211 819" preserveAspectRatio="none"> <path fill="currentColor" d="M245 906h-211v-25h88c35 0 47 -15 47 -46v-668c0 -35 -13 -54 -51 -54h-84v-25h211v818z"/></svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="34 88 211 819" preserveAspectRatio="none"> <path fill="currentColor" d="M245 906h-211v-25h88c35 0 47 -15 47 -46v-668c0 -35 -13 -54 -51 -54h-84v-25h211v818z"/></svg>');
             }
 
             &[type="curly"]::before {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="100 70 250 862" preserveAspectRatio="none"> <path fill="currentColor" d="M350 920v11c-67 -1 -93 -7 -121 -25s-44 -59 -44 -115v-177c0 -69 -18 -93 -85 -114c67 -20 85 -43 85 -113v-178c0 -57 15 -96 44 -114s55 -24 121 -25v11c-69 18 -91 48 -91 123v168c0 83 -19 109 -94 129c75 19 94 45 94 128v168c0 75 22 105 91 123z"/></svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="100 70 250 862" preserveAspectRatio="none"> <path fill="currentColor" d="M350 920v11c-67 -1 -93 -7 -121 -25s-44 -59 -44 -115v-177c0 -69 -18 -93 -85 -114c67 -20 85 -43 85 -113v-178c0 -57 15 -96 44 -114s55 -24 121 -25v11c-69 18 -91 48 -91 123v168c0 83 -19 109 -94 129c75 19 94 45 94 128v168c0 75 22 105 91 123z"/></svg>');
             }
 
             &[type="curly"]::after {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="130 70 250 862" preserveAspectRatio="none"> <path fill="currentColor" d="M295 210v177c0 70 18 93 85 113c-67 21 -85 44 -85 114v178c0 57 -15 96 -44 114s-55 24 -121 25v-11c69 -18 91 -48 91 -123v-168c0 -83 19 -109 94 -129c-75 -19 -94 -44 -94 -128v-168c0 -75 -22 -105 -91 -123v-11c67 1 93 7 121 25s44 59 44 115z"/></svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="130 70 250 862" preserveAspectRatio="none"> <path fill="currentColor" d="M295 210v177c0 70 18 93 85 113c-67 21 -85 44 -85 114v178c0 57 -15 96 -44 114s-55 24 -121 25v-11c69 -18 91 -48 91 -123v-168c0 -83 19 -109 94 -129c-75 -19 -94 -44 -94 -128v-168c0 -75 -22 -105 -91 -123v-11c67 1 93 7 121 25s44 59 44 115z"/></svg>');
             }
 
             &[type="abs"]::before, &[type="abs"]::after {
-                background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="20 60 275 880" preserveAspectRatio="none"> <path fill="currentColor" d="M193 939h-66v-879h66v879z"/> </svg>');
+                mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="20 60 275 880" preserveAspectRatio="none"> <path fill="currentColor" d="M193 939h-66v-879h66v879z"/> </svg>');
             }
         }
 
@@ -250,12 +273,15 @@
                 display: inline-block;
             }
 
-            > z-sscript > z-sup {
-                transform: translate(0.4em, -0.4em);
-            }
-
-            > z-sscript > z-sub {
-                transform: translate(-0.2em, 0.4em);
+            + z-sscript, + z-cursor + z-sscript, + z-selection > z-sscript:first-child {
+                margin-left: -0.3em;
+                padding-right: 0.25em;
+                > z-sub {
+                    transform: translate(-0.2em, 0.4em);
+                }
+                > z-sup {
+                    transform: translate(0.45em, -0.4em);
+                }
             }
         }
     }

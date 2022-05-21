@@ -34,7 +34,11 @@ export class MathText extends Optionable<Text.TextOptions> implements Text.IMath
     }
 
     get contentJS(): MathGroup {
-        return DP.fromDOM(this._contents.children);
+        return DP.fromDOM(this.contentHTML.children, false);
+    }
+
+    set contentJS(content: MathGroup) {
+        this.contentHTML.replaceChildren(DP.toDOM(content, false));
     }
 
     get element(): HTMLElement {
@@ -56,9 +60,9 @@ export class MathField extends MathText {
         el.addEventListener("keydown", (e) => {
             if (!e.ctrlKey) {
                 e.preventDefault();
-                let contents = this.contentJS;
+                let contents = this.selectableContent;
                 DP.inputKey(e.key, e.shiftKey, contents);
-                this.contentHTML.replaceChildren(DP.toDOM(contents));
+                this.selectableContent = contents;
             }
             /*let cursor = false;
             let selection = this.contents.getElementsByTagName("z-selection")[0];
@@ -112,6 +116,14 @@ export class MathField extends MathText {
             }*/
         });
     }
+    get selectableContent(): MathGroup {
+        return DP.fromDOM(this.contentHTML.children, true);
+    }
+
+    set selectableContent(content: MathGroup) {
+        this.contentHTML.replaceChildren(DP.toDOM(content, true));
+    }
+
     get disabled(): boolean {
         return this.#disabled;
     }
