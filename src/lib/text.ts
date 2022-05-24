@@ -57,6 +57,17 @@ export class MathField extends MathText {
                 e.preventDefault();
             }
         });
+
+        el.addEventListener("documentpaste", (e: any) => {
+            let data = e.detail.clipboardData?.getData("text");
+            if (data && data.length > 0) {
+                let cursor = this.contentHTML.querySelector("z-cursor");
+                if (cursor) {
+                    cursor.parentNode?.insertBefore(DP.toDOM(LP.parse(data)), cursor);
+                }
+            }
+        });
+
         el.addEventListener("keydown", (e) => {
             if (!e.ctrlKey) {
                 e.preventDefault();

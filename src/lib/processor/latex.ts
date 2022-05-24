@@ -1,16 +1,27 @@
 import { ArgumentList, MathGroup } from "../types/math";
 import { argOrders } from "./dom";
 
-const simpleOps = [ "=","+","-","*","/", // Symbols
-    "\\left", "\\right", "\\{", "\\}", "[", "]", "(", ")", // Delimiters
-    "\\pi", "\\epsilon" // Letters
-];
+const characters: {[op: string]: string} = {"Delta": "∆", "Gamma": "Γ", "Lambda": "Λ", "Omega": "Ω", "Phi": "Φ", "Pi": "Π",
+    "Psi": "Ψ", "Sigma": "Σ", "Theta": "Θ", "Upsilon": "Υ", "Xi": "Ξ", "aleph": "ℵ", "alpha": "α", "beta": "β", "chi": "χ",
+    "delta": "δ", "digamma": "ϝ", "epsilon": "ϵ", "eta": "η", "gamma": "γ", "iota": "ι", "kappa": "κ", "lambda": "λ",
+    "mu": "µ", "nu": "ν", "omega": "ω", "phi": "φ", "pi": "π", "psi": "ψ", "rho": "ρ", "sigma": "σ", "tau": "τ", "theta": "θ",
+    "upsilon": "υ", "varepsilon": "ε", "varkappa": "ϰ", "varphi": "ϕ", "varpi": "ϖ", "varrho": "ϱ", "varsigma": "ς",
+    "vartheta": "ϑ", "xi": "ξ", "zeta": "ζ"};
 
-const parseRegex = /(\\[a-z]+)|(\\.)|(\[.*?\])|({.*?})|./gi;
+// LaTeX name
+const simpleOps = ["int"];
 
+const specialOps = ["^","_"];
+
+const parseRegex = /((\\left(\\{|(\\?[{[(|]))|{).*?(\\right(\\}|(\\?[}\])|]))|}))|(\\[a-z]+)|(\\.)|./gi;
+
+// LaTeX: DOM
 const convertArgs: {[latex: string]: string} = {"sqrt":"root"};
 
+// LaTeX: # optional args
 const optionalNums: {[op: string]: number} = {"sqrt":1};
+
+const bracketTypes: {[left: string]: string} = {"[":"square","{":"curly","(":"", "|":"abs"};
 
 // Format - "operator name": [required args, optional args]
 type InvalidMode = "convert"|"remove"|"include";
@@ -19,40 +30,130 @@ type InvalidMode = "convert"|"remove"|"include";
 
 export function parse(text: string, invalidMode: InvalidMode = "convert"): MathGroup {
     let separated = text.match(parseRegex);
+    return parseSeparated(separated ?? [], invalidMode);
+}
+
+function parseSeparated(separated: RegExpMatchArray, invalidMode: InvalidMode = "convert"): MathGroup {
     let group: MathGroup = [];
-    if (separated) {
-        while (separated.length > 0) {
-            let first: string = separated.splice(0,1)[0];
-            if (first.charAt(0) == "\\") {
-                let op = first.substring(1);
-                if (op in convertArgs) {
-                    op = convertArgs[op];
+    while (separated.length > 0) {
+        let first: string = separated.splice(0, 1)[0];
+        try {
+            if (first.startsWith("\\left") && first.indexOf("\\right") != -1) {
+                let leftBracket = first.substring(5,6);
+                if (leftBracket == "\\") {
+                    leftBracket = first.substring(6,7);
                 }
-                switch (op) {
-                    default:
-                        if (op in argOrders) {
-                            let argList: ArgumentList = {};
-                            let optional = op in optionalNums ? optionalNums[op] : 0;
-                            let currentArg = separated.splice(0,1)[0];
-                            for (let argName of argOrders[op]) {
-                                if (separated.length == 0) {
-                                    break;
-                                }
-                                if (currentArg.startsWith("[") && currentArg.endsWith("]")) {
-                                    if (optional) {
-                                        argList[argName] = parse(currentArg.substring(1,currentArg.length-1));
-                                    } else {
-                                        separated.unshift("[", ...currentArg.substring(1,currentArg.length-1).match(parseRegex) ?? [], "]");
-                                    }
-                                    currentArg = separated.splice(0,1)[0];
+                group.push({type: bracketTypes[leftBracket], contents: parse(first.substring(first.indexOf(leftBracket)+1, first.indexOf("\\right")), invalidMode)});
+            } else if (first.charAt(0) == "\\" || specialOps.includes(first)) {
+                let op, latexOp;
+                if (first.charAt(0) == "\\") {
+                    op = first.substring(1);
+                    if (op.length == 1) { // escape character
+                        group.push(op);
+                        continue;
+                    }
+                    latexOp = op;
+                    if (op in convertArgs) { // convert latex to DOM names
+                        op = convertArgs[op];
+                    }
+                } else {
+                    op = first;
+                    latexOp = op;
+                }
+                if (op == "^") {
+                    let parsed = parse(separated.splice(0, 1)[0], invalidMode);
+                    let lastItem = group[group.length-1];
+                    if (group.length > 0 && typeof lastItem == "object" && "operator" in lastItem && lastItem.operator == "sscript") {
+                        if ("sup" in lastItem.arguments) {
+                            lastItem.arguments["sup"].push(...parsed);
+                        } else {
+                            lastItem.arguments["sup"] = parsed;
+                        }
+                    } else {
+                        group.push({operator: "sscript", arguments:{sup: parsed}});
+                    }
+                } else if (op == "_") {
+                    let parsed = parse(separated.splice(0, 1)[0], invalidMode);
+                    let lastItem = group[group.length-1];
+                    if (group.length > 0 && typeof lastItem == "object" && "operator" in lastItem && lastItem.operator == "sscript") {
+                        if ("sub" in lastItem.arguments) {
+                            lastItem.arguments["sub"].push(...parsed);
+                        } else {
+                            lastItem.arguments["sub"] = parsed;
+                        }
+                    } else {
+                        group.push({operator: "sscript", arguments:{sub: parsed}});
+                    }
+                }/* else if (op == "left") {
+                    let leftBracket: string = separated.slice(0, 1)[0];
+                    if (!(leftBracket in matchingBrackets)) {
+                        break;
+                    }
+                    let rightBracket = matchingBrackets[leftBracket];
+                    let rightIndex = separated.indexOf("\\right");
+                    if (rightIndex == -1 || (rightIndex < separated.length - 1 && separated[rightIndex + 1] != rightBracket)) {
+                        if (rightIndex < separated.length - 1 && separated[rightIndex + 1] != rightBracket) {
+                            separated.splice(rightIndex, 1);
+                        }
+                        rightIndex = separated.length;
+                    }
+                    group.push({
+                        type: bracketTypes[leftBracket],
+                        contents: parseSeparated(separated.splice(1, rightIndex), invalidMode)
+                    });
+                }*/ else {
+                    if (op in argOrders) {
+                        let argList: ArgumentList = {};
+                        let optional = latexOp in optionalNums ? optionalNums[latexOp] : 0;
+                        let optionalRemaining = optional;
+                        let order = argOrders[op];
+                        for (let i = 0; optional+i < order.length; i++) {
+                            if (separated.length == 0) {
+                                break;
+                            }
+                            let currentArg = separated.splice(0, 1)[0];
+                            if (currentArg.startsWith("[") && optionalRemaining) {
+                                let rightBracket = separated.indexOf("]");
+                                if (rightBracket != -1) {
+                                    let currentArgs = separated.splice(0,rightBracket+1).slice(0,rightBracket);
+                                    argList[order[optional-optionalRemaining+i]] = parseSeparated(currentArgs, invalidMode);
+                                    optionalRemaining--;
+                                    i--;
                                 } else {
-                                    argList[argName] = parse(separated.splice(0,1)[0]);
+                                    optionalRemaining = 0;
+                                    argList[order[optional+i]] = parse(currentArg, invalidMode);
                                 }
+                            } else {
+                                if (optionalRemaining) {
+                                    optionalRemaining = 0;
+                                }
+                                argList[order[optional+i]] = parse(currentArg, invalidMode);
                             }
                         }
-                } 
+                        group.push({operator: op, arguments: argList});
+                    } else if (latexOp in characters) {
+                        group.push(characters[latexOp]);
+                    } else if (simpleOps.includes(latexOp)) {
+                        group.push({operator: op, arguments: {}});
+                    } else {
+                        switch (invalidMode) {
+                            case "include":
+                                group.push({operator: op, arguments: {}});
+                                break;
+                            case "remove":
+                                break;
+                            case "convert":
+                            default:
+                                group.push(...Array.from(latexOp));
+                        }
+                    }
+                }
+            } else if (first.startsWith("{") && first.endsWith("}")) {
+                group.push(...parse(first.substring(1, first.length - 1), invalidMode));
+            } else if (first.trim().length > 0) {
+                group.push(first);
             }
-        }
+        } catch {}
     }
     return group;
 }

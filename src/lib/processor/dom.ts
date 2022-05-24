@@ -1,10 +1,6 @@
-import {
-    Cursor,
-    MathGroup,
-    ArgumentList,
-    MathUnit,
-    SelectionIndex,
-} from "../types/math";
+import {ArgumentList, Cursor, LaTeXObj, MathGroup, MathUnit, SelectionIndex,} from "../types/math";
+
+import {parse as latexParse} from "./latex";
 
 const hasSelection = (value: MathUnit): boolean => {
     return value == Cursor || (typeof value == "object" && "selection" in value);
@@ -19,7 +15,7 @@ for (let key in convertChars) {
 
 // list all optional arguments first for LaTeX
 
-export const argOrders: {[op: string]: string[]} = {"frac": ["numer", "denom"], "sscript": ["sup", "sub"], "root":["ord", "arg"], "int":[]};
+export const argOrders: {[op: string]: string[]} = {"frac": ["numer", "denom"], "sscript": ["sup", "sub"], "root":["ord", "arg"]};
 
 // Methods
 
@@ -271,10 +267,14 @@ export function inputKey(key: string, shift: boolean, contents: MathGroup): void
         return;
     }
     if ("latex" in baseParent1) {
-        if (key.length != 1) {
-            key = "";
+        if (key == " " || key.toLowerCase() == "tab" || key.toLowerCase() == "enter")  {
+            parent1.push(...prev, ...post);
+            getGroup(parent2).splice(parentIndex, 1, ...latexParse((baseParent1 as LaTeXObj).latex.join("")), Cursor);
+        } else if (key.length == 1) {
+            parent1.push(...prev, key, Cursor, ...post);
+        } else {
+            parent1.push(...prev, Cursor, ...post);
         }
-        parent1.push(...prev, key, Cursor, ...post);
         return;
     }
     switch (key.toLowerCase()) {
