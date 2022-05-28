@@ -72,7 +72,7 @@
             display: inline-block;
         }
 
-        z-op {
+        z-op[spaced] {
             padding: 0 0.2em;
         }
 
@@ -81,9 +81,11 @@
         }
 
         z-var {
-            font-style: italic;
             font-size: 1em;
             min-width: 0.8ch;
+            &[italic] {
+                font-style: italic;
+            }
         }
 
         z-latex {
@@ -101,7 +103,7 @@
             &::before {
                 content: "$";
             }
-            z-var {
+            z-var[italic] {
                 font-style: normal;
             }
             z-op {
@@ -213,8 +215,7 @@
         }
 
         z-brackets {
-            display: inline-flex;
-            align-items: center;
+            display: inline-table;
             margin: 0.2em 0;
 
             &[ghost="left"]::before, &[ghost="right"]::after, &[ghost="both"]::before, &[ghost="both"]::after {
@@ -226,10 +227,7 @@
                 mask-size: 43% 100%;
                 mask-repeat: no-repeat;
                 content: "\200B";
-                vertical-align: middle;
-                display: flex;
-                align-self: stretch;
-                align-items: center;
+                display: table-cell;
                 mask-position: center;
                 background-color: currentColor;
             }

@@ -17,6 +17,8 @@ for (let key in convertChars) {
 
 export const argOrders: {[op: string]: string[]} = {"frac": ["numer", "denom"], "sscript": ["sup", "sub"], "root":["ord", "arg"]};
 
+export const simpleOps: string[] = ["int"];
+
 // Methods
 
 export function inputKey(key: string, shift: boolean, contents: MathGroup): void {
@@ -511,18 +513,29 @@ export function toDOM(units: MathGroup, allowSelection = true, convert = true): 
         } else if (typeof unit == "string") {
             for (let char of Array.from(unit)) {
                 let name;
+                let special = "";
                 if (/\d|\./.test(char)) {
                     name = "z-num";
                 } else if (opChars.includes(char)) {
                     if (convert && char in convertChars) {
                         char = convertChars[char];
                     }
+                    if (char != "!") {
+                        special = "spaced";
+                    }
                     name = "z-op";
                 } else {
                     name = "z-var";
+                    if (/[a-zA-Z\u03AC-\u03FF]/.test(char)) {
+                        special = "italic";
+                    }
                 }
                 let el = document.createElement(name);
                 el.append(char);
+                
+                if (special.length > 0) {
+                    el.setAttribute(special, "");
+                }
                 mainFragment.append(el);
             }
         }
@@ -571,8 +584,14 @@ function fromDOMCollection(iterable: Iterable<Element>, allowSelection = true, c
             group.push({type: element.getAttribute("type") ?? "", contents: fromDOMCollection(element.children, !hasSelect, convert)});
         } else if (tagName == "latex") {
             group.push({latex: fromDOMCollection(element.children, !hasSelect, false)});
-        } else if (tagName in argOrders) {
-            let argOrder = argOrders[tagName];
+        } else if (tagName == "var" || tagName == "num" || tagName == "op") {
+            let content = element.textContent ?? "";
+            if (convert && content in convertCharsReverse) {
+                content = convertCharsReverse[content];
+            }
+            group.push(content);
+        } else {
+            let argOrder = argOrders[tagName] ?? [];
             let args: ArgumentList = {};
             for (let argName of argOrder) {
                 let argElements = element.querySelector(":scope > z-"+argName);
@@ -582,13 +601,7 @@ function fromDOMCollection(iterable: Iterable<Element>, allowSelection = true, c
                 }
             }
             group.push({operator: tagName, arguments: args});
-        } else {
-            let content = element.textContent ?? "";
-            if (convert && content in convertCharsReverse) {
-                content = convertCharsReverse[content];
-            }
-            group.push(content);
-        }
+        } 
     }
     return group;
 }

@@ -1,11 +1,11 @@
-import { ArgumentList, MathGroup } from "../types/math";
+import { ArgumentList, Cursor, MathGroup } from "../types/math";
 import { argOrders } from "./dom";
 
 const characters: {[op: string]: string} = {"Delta": "∆", "Gamma": "Γ", "Lambda": "Λ", "Omega": "Ω", "Phi": "Φ", "Pi": "Π",
     "Psi": "Ψ", "Sigma": "Σ", "Theta": "Θ", "Upsilon": "Υ", "Xi": "Ξ", "aleph": "ℵ", "alpha": "α", "beta": "β", "chi": "χ",
     "delta": "δ", "digamma": "ϝ", "epsilon": "ϵ", "eta": "η", "gamma": "γ", "iota": "ι", "kappa": "κ", "lambda": "λ",
-    "mu": "µ", "nu": "ν", "omega": "ω", "phi": "φ", "pi": "π", "psi": "ψ", "rho": "ρ", "sigma": "σ", "tau": "τ", "theta": "θ",
-    "upsilon": "υ", "varepsilon": "ε", "varkappa": "ϰ", "varphi": "ϕ", "varpi": "ϖ", "varrho": "ϱ", "varsigma": "ς",
+    "mu": "µ", "nu": "ν", "omega": "ω", "phi": "ϕ", "pi": "π", "psi": "ψ", "rho": "ρ", "sigma": "σ", "tau": "τ", "theta": "θ",
+    "upsilon": "υ", "varepsilon": "ε", "varkappa": "ϰ", "varphi": "φ", "varpi": "ϖ", "varrho": "ϱ", "varsigma": "ς",
     "vartheta": "ϑ", "xi": "ξ", "zeta": "ζ"};
 
 // LaTeX name
@@ -22,6 +22,8 @@ const convertArgs: {[latex: string]: string} = {"sqrt":"root"};
 const optionalNums: {[op: string]: number} = {"sqrt":1};
 
 const bracketTypes: {[left: string]: string} = {"[":"square","{":"curly","(":"", "|":"abs"};
+
+const matchingBrackets: {[left: string]: string} = {"(":")", "[":"]", "\\{":"\\}", "|":"|"};
 
 // Format - "operator name": [required args, optional args]
 type InvalidMode = "convert"|"remove"|"include";
@@ -109,7 +111,8 @@ function parseSeparated(separated: RegExpMatchArray, invalidMode: InvalidMode = 
                         let order = argOrders[op];
                         for (let i = 0; optional+i < order.length; i++) {
                             if (separated.length == 0) {
-                                break;
+                                argList[order[optional+i]] = [];
+                                continue;
                             }
                             let currentArg = separated.splice(0, 1)[0];
                             if (currentArg.startsWith("[") && optionalRemaining) {
@@ -156,6 +159,14 @@ function parseSeparated(separated: RegExpMatchArray, invalidMode: InvalidMode = 
         } catch {}
     }
     return group;
+}
+
+function separate(latex: string): string[] {
+    let arr: string[] = [];
+    while (latex.length > 0) {
+
+    }
+    return arr;
 }
 
 /*
